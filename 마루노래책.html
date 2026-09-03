@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>마루의 노래책 🎵</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Gowun+Dodum&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Gowun Dodum', 'Apple SD Gothic Neo', sans-serif; background: #fdf2f8; min-height: 100vh; color: #2d1b2e; }
+
+/* ── 인라인 메모 박스 ── */
+.memo-box { background: #fff8e7; border: 2px dashed #fbbf24; border-radius: 16px; padding: 14px 16px; margin-bottom: 1.5rem; }
+.memo-box-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.memo-size-btn { background: none; border: 1px solid #fcd34d; border-radius: 6px; cursor: pointer; color: #b45309; font-size: 13px; padding: 3px 10px; font-family: 'Gowun Dodum', sans-serif; }
+.memo-size-btn:hover { background: #fef3c7; }
+.memo-clear { background: none; border: none; cursor: pointer; font-size: 14px; color: #fbbf24; padding: 2px 8px; border-radius: 6px; }
+.memo-clear:hover { background: #fef3c7; }
+.memo-clear.hidden { visibility: hidden; }
+.memo-size-row { display: none; align-items: center; gap: 10px; margin-bottom: 8px; }
+.memo-size-row.open { display: flex; }
+.memo-size-row label { font-size: 12px; color: #b45309; white-space: nowrap; }
+.memo-size-row input[type=range] { flex: 1; accent-color: #f59e0b; }
+.size-val { font-size: 12px; color: #b45309; min-width: 32px; text-align: right; }
+.memo-textarea { width: 100%; border: none; background: transparent; font-family: 'Nanum Pen Script', cursive; font-size: 17px; color: #78350f; outline: none; resize: none; min-height: 36px; max-height: 300px; overflow-y: auto; line-height: 1.6; }
+.memo-textarea::placeholder { color: #fcd34d; }
+.memo-textarea[readonly] { cursor: default; }
+.memo-readonly-hint { font-size: 11px; color: #fcd34d; text-align: right; margin-top: 2px; font-family: 'Gowun Dodum', sans-serif; }
+
+/* ── 앱 본문 ── */
+.app { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+/* ── Header ── */
+.header { text-align: center; margin-bottom: 1.5rem; position: relative; padding: 0.5rem 0; }
+.header h1 { font-family: 'Nanum Pen Script', cursive; font-size: 38px; font-weight: 400; color: #be185d; letter-spacing: 1px; }
+.header p  { font-size: 13px; color: #9d174d; margin-top: 2px; }
+.gear-btn  { position: absolute; left: 0; top: 8px; background: none; border: 1.5px solid #fbcfe8; border-radius: 10px; cursor: pointer; color: #be185d; font-size: 18px; padding: 5px 9px; line-height: 1; transition: background .15s; }
+.gear-btn:hover { background: #fce7f3; }
+.gear-btn.on    { background: #fce7f3; border-color: #f9a8d4; }
+
+/* ── Admin banner ── */
+.admin-banner { display: none; background: #fce7f3; border: 1.5px solid #f9a8d4; border-radius: 14px; padding: 10px 16px; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 8px; }
+.admin-banner.on { display: flex; }
+.admin-banner span { font-size: 14px; color: #be185d; font-weight: 700; }
+.logout-btn { background: white; border: 1px solid #f9a8d4; border-radius: 8px; padding: 5px 14px; font-size: 13px; cursor: pointer; color: #be185d; }
+.logout-btn:hover { background: #fdf2f8; }
+
+/* ── Add form ── */
+.add-panel { display: none; background: white; border: 1.5px solid #f9a8d4; border-radius: 18px; padding: 18px; margin-bottom: 1rem; }
+.add-panel.on { display: block; }
+.add-panel-title { font-family: 'Nanum Pen Script', cursive; font-size: 22px; color: #be185d; margin-bottom: 14px; }
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
+.form-field.wide { flex: 100%; }
+.form-field label { font-size: 12px; font-weight: 700; color: #9d174d; }
+.form-field input, .form-field select { height: 38px; border-radius: 10px; border: 1px solid #fbcfe8; padding: 0 12px; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; background: #fdf2f8; color: #2d1b2e; outline: none; width: 100%; }
+.form-field input:focus, .form-field select:focus { border-color: #ec4899; background: white; }
+.hell-check-wrap { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.hell-check-wrap input[type=checkbox] { width: 18px; height: 18px; accent-color: #ef4444; cursor: pointer; }
+.hell-check-wrap label { font-size: 13px; color: #9d174d; cursor: pointer; }
+.add-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.btn-primary   { background: #ec4899; color: white; border: none; border-radius: 10px; padding: 9px 22px; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; font-weight: 700; cursor: pointer; }
+.btn-primary:hover { background: #db2777; }
+.btn-secondary { background: white; color: #9d174d; border: 1px solid #fbcfe8; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; cursor: pointer; }
+.btn-secondary:hover { background: #fdf2f8; }
+
+/* ── Search ── */
+.search-wrap { position: relative; margin-bottom: 1rem; }
+.search-wrap input { width: 100%; height: 44px; border-radius: 14px; border: 1.5px solid #fbcfe8; padding: 0 40px 0 44px; font-size: 15px; font-family: 'Gowun Dodum', sans-serif; background: white; color: #2d1b2e; outline: none; transition: border-color .15s; }
+.search-wrap input:focus { border-color: #f472b6; }
+.search-ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 17px; pointer-events: none; }
+.clear-btn  { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #f9a8d4; font-size: 17px; display: none; }
+.clear-btn.show { display: block; }
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+.tab { padding: 7px 18px; border-radius: 999px; border: 1.5px solid #fbcfe8; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; cursor: pointer; background: white; color: #9d174d; font-weight: 700; transition: all .15s; }
+.tab.active { background: #ec4899; border-color: #ec4899; color: white; }
+.tab:hover:not(.active) { background: #fce7f3; }
+
+/* ── Count ── */
+.count { font-size: 13px; color: #9d174d; margin-bottom: 10px; opacity: .7; }
+
+/* ── Song list ── */
+.song-list { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── Song card — view ── */
+.song-card { background: white; border: 1px solid #fce7f3; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: box-shadow .15s; }
+.song-card:hover { box-shadow: 0 2px 14px rgba(236,72,153,.1); }
+.song-card.hell-card { border-color: #fca5a5; background: #fff8f8; }
+.song-info { flex: 1; min-width: 0; }
+.artist-name { font-size: 12px; color: #ec4899; font-weight: 700; margin-bottom: 2px; }
+.song-title  { font-size: 16px; font-weight: 700; color: #2d1b2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badges { display: flex; align-items: center; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.genre-badge { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 700; }
+.badge-kpop { background: #fce7f3; color: #be185d; }
+.badge-pop  { background: #ede9fe; color: #6d28d9; }
+.badge-jpop { background: #ecfdf5; color: #065f46; }
+.badge-hell { background: #fee2e2; color: #b91c1c; font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; }
+.song-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.mr-link    { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #ec4899; border: 1.5px solid #fbcfe8; border-radius: 8px; padding: 5px 11px; text-decoration: none; background: white; white-space: nowrap; font-family: 'Gowun Dodum', sans-serif; }
+.mr-link:hover { background: #fce7f3; }
+.no-link-txt { font-size: 12px; color: #d1d5db; }
+.card-admin-btns { display: flex; gap: 6px; }
+.btn-edit-sm { background: none; border: 1px solid #fbcfe8; border-radius: 8px; padding: 5px 10px; font-size: 12px; color: #9d174d; cursor: pointer; white-space: nowrap; }
+.btn-edit-sm:hover { background: #fce7f3; }
+.btn-del-sm  { background: none; border: 1px solid #fca5a5; border-radius: 8px; padding: 5px 10px; font-size: 12px; color: #e11d48; cursor: pointer; white-space: nowrap; }
+.btn-del-sm:hover { background: #fff1f2; }
+
+/* ── Edit mode ── */
+.song-card.edit-mode { flex-direction: column; align-items: stretch; background: #fffbff; border: 1.5px solid #f9a8d4; }
+.edit-row   { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.edit-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+.edit-field.wide { flex: 100%; }
+.edit-field label { font-size: 11px; font-weight: 700; color: #9d174d; }
+.edit-field input, .edit-field select { height: 36px; border-radius: 8px; border: 1px solid #fbcfe8; padding: 0 10px; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; background: white; color: #2d1b2e; outline: none; width: 100%; }
+.edit-field input:focus, .edit-field select:focus { border-color: #ec4899; }
+.edit-hell-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.edit-hell-row input[type=checkbox] { width: 18px; height: 18px; accent-color: #ef4444; cursor: pointer; }
+.edit-hell-row label { font-size: 13px; color: #b91c1c; cursor: pointer; }
+.edit-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.edit-right { display: flex; gap: 8px; }
+.btn-save-sm   { background: #ec4899; color: white; border: none; border-radius: 8px; padding: 7px 18px; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; font-weight: 700; cursor: pointer; }
+.btn-save-sm:hover { background: #db2777; }
+.btn-cancel-sm { background: white; color: #9d174d; border: 1px solid #fbcfe8; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; cursor: pointer; }
+.btn-cancel-sm:hover { background: #fdf2f8; }
+.btn-destroy   { background: white; color: #e11d48; border: 1px solid #fca5a5; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; cursor: pointer; }
+.btn-destroy:hover { background: #fff1f2; }
+
+/* ── Empty ── */
+.empty { text-align: center; padding: 3rem 1rem; }
+.empty .emoji { font-size: 36px; }
+.empty p { font-family: 'Nanum Pen Script', cursive; font-size: 22px; margin-top: 8px; color: #f9a8d4; }
+
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); align-items: center; justify-content: center; z-index: 300; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 22px; border: 1px solid #fce7f3; padding: 2rem; width: 300px; }
+.modal h2 { font-family: 'Nanum Pen Script', cursive; font-size: 26px; font-weight: 400; margin-bottom: 1rem; color: #be185d; }
+.modal input { width: 100%; height: 42px; border-radius: 10px; border: 1.5px solid #fbcfe8; padding: 0 14px; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; color: #2d1b2e; outline: none; }
+.modal input:focus { border-color: #ec4899; }
+.modal-err  { font-size: 12px; color: #e11d48; margin-top: 6px; min-height: 18px; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+.btn-modal-cancel { background: white; border: 1px solid #fbcfe8; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; cursor: pointer; color: #9d174d; }
+.btn-modal-ok { background: #ec4899; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-family: 'Gowun Dodum', sans-serif; font-weight: 700; cursor: pointer; color: white; }
+.btn-modal-ok:hover { background: #db2777; }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #2d1b2e; color: white; border-radius: 12px; padding: 11px 22px; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; font-weight: 700; z-index: 400; transition: transform .25s; pointer-events: none; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <button class="gear-btn" id="gearBtn" title="관리자 로그인">⚙️</button>
+    <h1>마루의 노래책 🎵</h1>
+    <p>K-pop · Pop · J-pop 즐겨찾기</p>
+  </div>
+
+  <!-- 메모 박스 -->
+  <div class="memo-box" id="memoBox">
+    <div class="memo-box-toolbar">
+      <button class="memo-size-btn" id="memSizeToggle">가 크기</button>
+      <button class="memo-clear hidden" id="memoClear">✕ 지우기</button>
+    </div>
+    <div class="memo-size-row" id="sizePanel">
+      <label>글씨 크기</label>
+      <input type="range" id="memoSizeRange" min="13" max="30" value="17" step="1" />
+      <span class="size-val" id="sizeVal">17px</span>
+    </div>
+    <textarea class="memo-textarea" id="memoInput" placeholder="여기에 메모를 적어요 🌸&#10;예) 노래 120곡 · 헬곡 5곡" readonly rows="2"></textarea>
+    <div class="memo-readonly-hint" id="memoHint">🔒 관리자만 편집할 수 있어요</div>
+  </div>
+
+  <!-- Admin banner -->
+  <div class="admin-banner" id="adminBanner">
+    <span>🔓 관리자 모드 — 자유롭게 수정하세요!</span>
+    <button class="logout-btn" id="logoutBtn">로그아웃</button>
+  </div>
+
+  <!-- Add panel -->
+  <div class="add-panel" id="addPanel">
+    <div class="add-panel-title">➕ 새 노래 추가하기</div>
+    <div class="form-row">
+      <div class="form-field"><label>가수명</label><input type="text" id="nArtist" placeholder="예) 아이유" /></div>
+      <div class="form-field"><label>제목</label><input type="text" id="nTitle" placeholder="예) 좋은 날" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field" style="max-width:140px"><label>장르</label>
+        <select id="nGenre">
+          <option value="kpop">K-pop</option>
+          <option value="pop">Pop</option>
+          <option value="jpop">J-pop</option>
+        </select>
+      </div>
+      <div class="form-field wide"><label>MR 링크 (유튜브)</label><input type="text" id="nUrl" placeholder="https://www.youtube.com/watch?v=..." /></div>
+    </div>
+    <div class="hell-check-wrap">
+      <input type="checkbox" id="nHell" />
+      <label for="nHell">🔥 헬곡으로 표시</label>
+    </div>
+    <div class="add-btns">
+      <button class="btn-secondary" id="clearFormBtn">초기화</button>
+      <button class="btn-primary" id="addOkBtn">추가하기</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input type="text" id="searchInput" placeholder="가수 또는 제목 검색..." />
+    <button class="clear-btn" id="clearBtn">✕</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-genre="all">전체</button>
+    <button class="tab" data-genre="kpop">K-pop</button>
+    <button class="tab" data-genre="pop">Pop</button>
+    <button class="tab" data-genre="jpop">J-pop</button>
+    <button class="tab" data-genre="hell">🔥 헬곡</button>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div class="song-list" id="songList"></div>
+</div>
+
+<!-- Login modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>🔐 관리자 로그인</h2>
+    <input type="password" id="pwInput" placeholder="비밀번호 입력" />
+    <div class="modal-err" id="modalErr"></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" id="modalCancelBtn">취소</button>
+      <button class="btn-modal-ok" id="modalOkBtn">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ADMIN_PW = '121314';
+
+const DEFAULT_SONGS = [
+  {id:1,artist:"2ne1",title:"go away",genre:"kpop",url:"https://www.youtube.com/watch?v=8PVyPGGV6Jg",hell:false},
+  {id:2,artist:"2ne1",title:"I don't care",genre:"kpop",url:"https://www.youtube.com/watch?v=Zyes6SYAgPE",hell:false},
+  {id:3,artist:"2ne1",title:"Ugly",genre:"kpop",url:"https://www.youtube.com/watch?v=Yemce5hfyRU",hell:false},
+  {id:4,artist:"2ne1",title:"lonely",genre:"kpop",url:"https://www.youtube.com/watch?v=G6U8azM6OeI",hell:false},
+  {id:5,artist:"가비엔제이",title:"해바라기",genre:"kpop",url:"https://www.youtube.com/watch?v=bVUGMoTmrYA",hell:false},
+  {id:6,artist:"거북이",title:"비행기",genre:"kpop",url:"https://www.youtube.com/watch?v=7cgAy-8RrQ4",hell:false},
+  {id:7,artist:"거미",title:"그대 돌아오면",genre:"kpop",url:"https://www.youtube.com/watch?v=GqwVjgFvqds",hell:false},
+  {id:8,artist:"김아중",title:"maria",genre:"kpop",url:"https://www.youtube.com/watch?v=FcFvbBj4oe0",hell:false},
+  {id:9,artist:"김현정",title:"그녀와의 이별",genre:"kpop",url:"https://www.youtube.com/watch?v=_vW2qRfQ_TU",hell:false},
+  {id:10,artist:"나얼",title:"바람기억",genre:"kpop",url:"https://www.youtube.com/watch?v=dy5mIswO2Dg",hell:false},
+  {id:11,artist:"나비",title:"잘 된 일이야",genre:"kpop",url:"https://www.youtube.com/watch?v=Lx7mJTNzbnc",hell:false},
+  {id:12,artist:"넬",title:"기억을 걷는 시간",genre:"kpop",url:"https://www.youtube.com/watch?v=X6rO51NajrI",hell:false},
+  {id:13,artist:"다비치",title:"8282",genre:"kpop",url:"https://www.youtube.com/watch?v=kO5cHcSWkN8",hell:false},
+  {id:14,artist:"달빛천사 OST",title:"나의 마음을 담아",genre:"kpop",url:"https://www.youtube.com/watch?v=MZcEO8phDGk",hell:false},
+  {id:15,artist:"달빛천사 OST",title:"new future",genre:"kpop",url:"https://www.youtube.com/watch?v=hdDnUY2JSmk",hell:false},
+  {id:16,artist:"듀스",title:"여름 안에서",genre:"kpop",url:"https://www.youtube.com/watch?v=tdk5kbpRyDE",hell:false},
+  {id:17,artist:"러브홀릭스",title:"butterfly",genre:"kpop",url:"https://www.youtube.com/watch?v=Zkskv6hc_Fo",hell:false},
+  {id:18,artist:"럼블피쉬",title:"으라차차",genre:"kpop",url:"https://www.youtube.com/watch?v=CaOSVbKZT7I",hell:false},
+  {id:19,artist:"럼블피쉬",title:"비와 당신",genre:"kpop",url:"https://www.youtube.com/watch?v=EgAT_yAZ5-0",hell:false},
+  {id:20,artist:"럼블피쉬",title:"i go",genre:"kpop",url:"https://www.youtube.com/watch?v=RvN6WFRF1GY",hell:false},
+  {id:21,artist:"린",title:"시간을 거슬러",genre:"kpop",url:"https://www.youtube.com/watch?v=nb5M274bdmE",hell:false},
+  {id:22,artist:"린",title:"my destiny",genre:"kpop",url:"https://www.youtube.com/watch?v=AJVkAP-Jqiw",hell:false},
+  {id:23,artist:"마마무",title:"데칼코마니",genre:"kpop",url:"https://www.youtube.com/watch?v=nnfosHGLU_k",hell:false},
+  {id:24,artist:"마야",title:"진달래꽃",genre:"kpop",url:"",hell:false},
+  {id:25,artist:"마이티마우스 & 소야",title:"랄랄라",genre:"kpop",url:"https://www.youtube.com/watch?v=78POayhO3_4",hell:false},
+  {id:26,artist:"멜로망스",title:"사랑인가봐",genre:"kpop",url:"https://www.youtube.com/watch?v=F4eMecJ9Y_U",hell:false},
+  {id:27,artist:"박다혜",title:"이해해",genre:"kpop",url:"https://www.youtube.com/watch?v=quayMApYVNY",hell:false},
+  {id:28,artist:"박미경",title:"이브의 경고",genre:"kpop",url:"https://www.youtube.com/watch?v=GM2GB0El9eM",hell:false},
+  {id:29,artist:"박봄",title:"dont cry",genre:"kpop",url:"https://www.youtube.com/watch?v=Ydpr2mqtzmc",hell:false},
+  {id:30,artist:"박봄",title:"u&i",genre:"kpop",url:"https://www.youtube.com/watch?v=yKOHH8R8Gz4",hell:false},
+  {id:31,artist:"박원",title:"all of my life",genre:"kpop",url:"https://www.youtube.com/watch?v=tGlXa56Sp_s",hell:false},
+  {id:32,artist:"박정현",title:"꿈에",genre:"kpop",url:"https://www.youtube.com/watch?v=_HBFafB4HsU",hell:false},
+  {id:33,artist:"박정현",title:"나가거든",genre:"kpop",url:"https://www.youtube.com/watch?v=MRUVI6jXrB0",hell:false},
+  {id:34,artist:"박정현",title:"나의 하루",genre:"kpop",url:"https://www.youtube.com/watch?v=PoJFa6WVB9M",hell:false},
+  {id:35,artist:"박정현",title:"미아",genre:"kpop",url:"https://www.youtube.com/watch?v=2WKzwZg3WXo",hell:false},
+  {id:36,artist:"박정현",title:"미장원에서",genre:"kpop",url:"https://www.youtube.com/watch?v=_uPxrNxbEH8",hell:false},
+  {id:37,artist:"박정현",title:"비오는 날의 수채화",genre:"kpop",url:"https://www.youtube.com/watch?v=8UznCduAb-Q",hell:false},
+  {id:38,artist:"박정현",title:"소나기",genre:"kpop",url:"https://www.youtube.com/watch?v=Oeo2qHbvyy0",hell:false},
+  {id:39,artist:"박정현",title:"이별하러 가는 길",genre:"kpop",url:"https://www.youtube.com/watch?v=P5TfKRDyaK0",hell:false},
+  {id:40,artist:"박정현",title:"이젠 그랬으면 좋겠네",genre:"kpop",url:"https://www.youtube.com/watch?v=wzxLvewIFG8",hell:false},
+  {id:41,artist:"박정현",title:"편지할게요",genre:"kpop",url:"https://www.youtube.com/watch?v=0APLVNSqKqs",hell:false},
+  {id:42,artist:"박혜경",title:"yesterday",genre:"kpop",url:"https://www.youtube.com/watch?v=kyS2j9_vZvE",hell:false},
+  {id:43,artist:"박혜경",title:"고백",genre:"kpop",url:"https://www.youtube.com/watch?v=x--vs2zsxmI",hell:false},
+  {id:44,artist:"박혜경",title:"안녕",genre:"kpop",url:"https://www.youtube.com/watch?v=TECVuRGElQ4",hell:false},
+  {id:45,artist:"박혜경",title:"lemon tree",genre:"kpop",url:"https://www.youtube.com/watch?v=LI0glQOpgV8",hell:false},
+  {id:46,artist:"박혜경",title:"rain",genre:"kpop",url:"https://www.youtube.com/watch?v=w2jjOgYheS0",hell:false},
+  {id:47,artist:"박혜경",title:"주문을 걸어",genre:"kpop",url:"https://www.youtube.com/watch?v=M2wOfLrB9aA",hell:false},
+  {id:48,artist:"박효신",title:"야생화",genre:"kpop",url:"https://www.youtube.com/watch?v=DDH4q011uuM",hell:false},
+  {id:49,artist:"박화요비",title:"그런일은",genre:"kpop",url:"https://www.youtube.com/watch?v=AzBk6eBGMHA",hell:false},
+  {id:50,artist:"백예린",title:"bye bye blue",genre:"kpop",url:"https://www.youtube.com/watch?v=2vKAMQXXe9g",hell:false},
+  {id:51,artist:"백예린",title:"우주를 건너",genre:"kpop",url:"https://www.youtube.com/watch?v=x-cwkwVPtW8",hell:false},
+  {id:52,artist:"보아",title:"Eat you up",genre:"kpop",url:"https://www.youtube.com/watch?v=Zzekiwy5uZg",hell:false},
+  {id:53,artist:"보아",title:"Everlasting",genre:"kpop",url:"https://www.youtube.com/watch?v=fmJG7fmUQXk",hell:false},
+  {id:54,artist:"보아",title:"No.1",genre:"kpop",url:"https://www.youtube.com/watch?v=yJewLeWHSLM",hell:false},
+  {id:55,artist:"보아",title:"valenti",genre:"kpop",url:"https://www.youtube.com/watch?v=jXOfTWv0AaU",hell:false},
+  {id:56,artist:"보아",title:"girls on top",genre:"kpop",url:"https://www.youtube.com/watch?v=ibCR92B9vI4",hell:false},
+  {id:57,artist:"보아",title:"every heart",genre:"kpop",url:"https://www.youtube.com/watch?v=Lr55_rAzT3c",hell:false},
+  {id:58,artist:"보아",title:"오늘 그댈 본다면",genre:"kpop",url:"https://www.youtube.com/watch?v=UVoCUQTNAFQ",hell:false},
+  {id:59,artist:"보아",title:"아틀란티스 소녀",genre:"kpop",url:"https://www.youtube.com/watch?v=emL76v9Yo50",hell:false},
+  {id:60,artist:"보아",title:"늘",genre:"kpop",url:"https://www.youtube.com/watch?v=UqyigEWUC_M",hell:false},
+  {id:61,artist:"보아",title:"천사의 숨결",genre:"kpop",url:"https://www.youtube.com/watch?v=IArJMtDrOhw",hell:false},
+  {id:62,artist:"빅마마",title:"체념",genre:"kpop",url:"https://www.youtube.com/watch?v=DQlL-YRqzAo",hell:false},
+  {id:63,artist:"볼빨간 사춘기",title:"나의 사춘기에게",genre:"kpop",url:"https://www.youtube.com/watch?v=YCJaS6ZrtFA",hell:false},
+  {id:64,artist:"볼빨간 사춘기",title:"싸운 날",genre:"kpop",url:"https://www.youtube.com/watch?v=E9_CnxF71Z0",hell:false},
+  {id:65,artist:"블랙핑크",title:"stay",genre:"kpop",url:"https://www.youtube.com/watch?v=NWdwzBlh2vE",hell:false},
+  {id:66,artist:"부활",title:"never ending story",genre:"kpop",url:"https://www.youtube.com/watch?v=UuxWq5QfkVw",hell:false},
+  {id:67,artist:"서영은",title:"혼자가 아닌 나",genre:"kpop",url:"https://www.youtube.com/watch?v=me6vI5kl4us",hell:false},
+  {id:68,artist:"서영은",title:"칵테일 사랑",genre:"kpop",url:"https://www.youtube.com/watch?v=pE6QawCvta0",hell:false},
+  {id:69,artist:"소찬휘",title:"tears",genre:"kpop",url:"https://www.youtube.com/watch?v=xcdGpZXsZ14",hell:false},
+  {id:70,artist:"소녀시대",title:"다시 만난 세계",genre:"kpop",url:"https://www.youtube.com/watch?v=nyIwLvDEb-I",hell:false},
+  {id:71,artist:"소향 & 박정현 & 이영현",title:"mermaid",genre:"kpop",url:"https://www.youtube.com/watch?v=eTq_cN6moAc",hell:false},
+  {id:72,artist:"소야 앤 썬",title:"웃으며 안녕",genre:"kpop",url:"https://www.youtube.com/watch?v=2AXM_PmRaUk",hell:false},
+  {id:73,artist:"씨야",title:"사랑의 인사",genre:"kpop",url:"https://www.youtube.com/watch?v=YFU6P_Llyfo",hell:false},
+  {id:74,artist:"씨야",title:"미친 사랑의 노래",genre:"kpop",url:"https://www.youtube.com/watch?v=ILoYD5AXxng",hell:false},
+  {id:75,artist:"씨야",title:"구두",genre:"kpop",url:"https://www.youtube.com/watch?v=FzxfTSCgdNQ",hell:false},
+  {id:76,artist:"아이비",title:"이럴거면",genre:"kpop",url:"https://www.youtube.com/watch?v=GHJVhqNZ9PE",hell:false},
+  {id:77,artist:"아이오아이",title:"벚꽃이 지면",genre:"kpop",url:"https://www.youtube.com/watch?v=Kb795XGLPak",hell:false},
+  {id:78,artist:"아이오아이",title:"소나기",genre:"kpop",url:"https://www.youtube.com/watch?v=0sBlIZ5pPIQ",hell:false},
+  {id:79,artist:"아이유",title:"blueming",genre:"kpop",url:"https://www.youtube.com/watch?v=2g0IwIlFR3k",hell:false},
+  {id:80,artist:"아이유",title:"금요일에 만나요",genre:"kpop",url:"https://www.youtube.com/watch?v=5RcBZv0DQjI",hell:false},
+  {id:81,artist:"아이유",title:"너의 의미",genre:"kpop",url:"https://www.youtube.com/watch?v=y0-KfrLrPhs",hell:false},
+  {id:82,artist:"아이유",title:"밤편지",genre:"kpop",url:"https://www.youtube.com/watch?v=ETKtORK_PWU",hell:false},
+  {id:83,artist:"아이유",title:"이런 엔딩",genre:"kpop",url:"https://www.youtube.com/watch?v=n3k7XeCyYgc",hell:false},
+  {id:84,artist:"아이유",title:"이름에게",genre:"kpop",url:"https://www.youtube.com/watch?v=ZPXWFhmwbEc",hell:false},
+  {id:85,artist:"아이유",title:"좋은 날",genre:"kpop",url:"https://www.youtube.com/watch?v=KDRfutVZLDw",hell:false},
+  {id:86,artist:"에일리",title:"U&I",genre:"kpop",url:"https://www.youtube.com/watch?v=TDZCn4nNuRk",hell:false},
+  {id:87,artist:"에일리",title:"보여줄게",genre:"kpop",url:"https://www.youtube.com/watch?v=lB0fkMkXV1M",hell:false},
+  {id:88,artist:"에일리",title:"저녁하늘",genre:"kpop",url:"https://www.youtube.com/watch?v=qstNSrD9H7o",hell:false},
+  {id:89,artist:"에일리",title:"첫눈처럼 너에게 가겠다",genre:"kpop",url:"https://www.youtube.com/watch?v=fAGOZ-HU6dY",hell:false},
+  {id:90,artist:"에일리",title:"higher",genre:"kpop",url:"https://www.youtube.com/watch?v=JwHe-rtUHw0",hell:false},
+  {id:91,artist:"에일리",title:"heaven",genre:"kpop",url:"https://www.youtube.com/watch?v=XeCMVTjHBhk",hell:false},
+  {id:92,artist:"옥주현",title:"천일동안",genre:"kpop",url:"https://www.youtube.com/watch?v=xIJhUyznl8k",hell:false},
+  {id:93,artist:"윤하",title:"best friend",genre:"kpop",url:"https://www.youtube.com/watch?v=2x5RSHy1ITQ",hell:false},
+  {id:94,artist:"윤하",title:"home",genre:"kpop",url:"https://www.youtube.com/watch?v=7t_EtiiSSk4",hell:false},
+  {id:95,artist:"윤하",title:"parade",genre:"kpop",url:"https://www.youtube.com/watch?v=QqrPrwQjFyU",hell:false},
+  {id:96,artist:"윤하",title:"subsonic",genre:"kpop",url:"https://www.youtube.com/watch?v=XwM0XDWB9dM",hell:false},
+  {id:97,artist:"윤하",title:"괜찮다",genre:"kpop",url:"https://www.youtube.com/watch?v=EpXYsVjcOmo",hell:false},
+  {id:98,artist:"윤하",title:"기다리다",genre:"kpop",url:"https://www.youtube.com/watch?v=qSwL9NIRNx0",hell:false},
+  {id:99,artist:"윤하",title:"고백하기 좋은 날",genre:"kpop",url:"https://www.youtube.com/watch?v=00SdIayDv8Q",hell:false},
+  {id:100,artist:"윤하",title:"바다 아이",genre:"kpop",url:"https://www.youtube.com/watch?v=SPOgjcPnIfY",hell:false},
+  {id:101,artist:"윤하",title:"비밀번호 486",genre:"kpop",url:"https://www.youtube.com/watch?v=Fj1xAz6RFkc",hell:false},
+  {id:102,artist:"윤하",title:"사건의 지평선",genre:"kpop",url:"https://www.youtube.com/watch?v=jtspgzwwlI0",hell:false},
+  {id:103,artist:"윤하",title:"시간을 믿었어",genre:"kpop",url:"https://www.youtube.com/watch?v=Azyj1LPW8dE",hell:false},
+  {id:104,artist:"윤하",title:"우리가 헤어진 진짜 이유",genre:"kpop",url:"https://www.youtube.com/watch?v=E2Ng2keYJck",hell:false},
+  {id:105,artist:"윤하",title:"우산",genre:"kpop",url:"https://www.youtube.com/watch?v=WJxnyzvFmCI",hell:false},
+  {id:106,artist:"윤하",title:"오늘 헤어졌어요",genre:"kpop",url:"https://www.youtube.com/watch?v=vv-Fnoj_nDs",hell:false},
+  {id:107,artist:"윤하",title:"앨리스",genre:"kpop",url:"https://www.youtube.com/watch?v=jxp5Oa7Vqss",hell:false},
+  {id:108,artist:"윤하",title:"먼 훗날에",genre:"kpop",url:"https://www.youtube.com/watch?v=vNgoeGo2dI8",hell:false},
+  {id:109,artist:"윤하",title:"빗소리",genre:"kpop",url:"https://www.youtube.com/watch?v=w_-0y92pxXA",hell:false},
+  {id:110,artist:"윤하",title:"혜성",genre:"kpop",url:"https://www.youtube.com/watch?v=FGHxq9xzWkU",hell:false},
+  {id:111,artist:"이선희",title:"나 항상 그대를",genre:"kpop",url:"https://www.youtube.com/watch?v=pdoDmZJrFm4",hell:false},
+  {id:112,artist:"이선희",title:"인연",genre:"kpop",url:"https://www.youtube.com/watch?v=gI9qYO-QpLA",hell:false},
+  {id:113,artist:"이수영",title:"덩그러니",genre:"kpop",url:"https://www.youtube.com/watch?v=MRVzpndRdPU",hell:false},
+  {id:114,artist:"이수영",title:"두근두근",genre:"kpop",url:"https://www.youtube.com/watch?v=qErQSgFUCS8",hell:false},
+  {id:115,artist:"이수영",title:"라라라",genre:"kpop",url:"https://www.youtube.com/watch?v=JXbsD6RdgyU",hell:false},
+  {id:116,artist:"이수영",title:"빚",genre:"kpop",url:"https://www.youtube.com/watch?v=25d6ixRdH8k",hell:false},
+  {id:117,artist:"이수영",title:"얼마나 좋을까",genre:"kpop",url:"https://www.youtube.com/watch?v=KZdSjjHOLxE",hell:false},
+  {id:118,artist:"엠씨더맥스",title:"잠시만 안녕",genre:"kpop",url:"https://www.youtube.com/watch?v=BPzLU9o27Wg",hell:false},
+  {id:119,artist:"엠씨더맥스",title:"천년의 사랑",genre:"kpop",url:"https://www.youtube.com/watch?v=H2dZxDrjBLQ",hell:false},
+  {id:120,artist:"엠씨더맥스",title:"행복하지 말아요",genre:"kpop",url:"https://www.youtube.com/watch?v=x_uy0h8aWV4",hell:false},
+  {id:121,artist:"우즈",title:"드라우닝",genre:"kpop",url:"https://www.youtube.com/watch?v=um9zwPAPAVM",hell:false},
+  {id:122,artist:"자우림",title:"미안해 널 미워해",genre:"kpop",url:"https://www.youtube.com/watch?v=JEp8ODdIbUA",hell:false},
+  {id:123,artist:"장나라",title:"sweat dream",genre:"kpop",url:"https://www.youtube.com/watch?v=c2BS6CLx2Kg",hell:false},
+  {id:124,artist:"제이",title:"어제처럼",genre:"kpop",url:"https://www.youtube.com/watch?v=oY2P4_8l3oI",hell:false},
+  {id:125,artist:"쥬얼리",title:"love story",genre:"kpop",url:"https://www.youtube.com/watch?v=1uQT7gFNQU4",hell:false},
+  {id:126,artist:"쥬얼리",title:"니가 참 좋아",genre:"kpop",url:"https://www.youtube.com/watch?v=7iPaYZdTy6Q",hell:false},
+  {id:127,artist:"지나",title:"꺼져줄게 잘살아",genre:"kpop",url:"https://www.youtube.com/watch?v=OvZLjFAfjWU",hell:false},
+  {id:128,artist:"체리필터",title:"happy day",genre:"kpop",url:"https://www.youtube.com/watch?v=ZgjQDg_nsJw",hell:false},
+  {id:129,artist:"체리필터",title:"오리날다",genre:"kpop",url:"https://www.youtube.com/watch?v=oqFr2nBoha4",hell:false},
+  {id:130,artist:"체리필터",title:"낭만고양이",genre:"kpop",url:"https://www.youtube.com/watch?v=SI8IJSyBfe8",hell:false},
+  {id:131,artist:"코요태",title:"우리의 꿈",genre:"kpop",url:"https://www.youtube.com/watch?v=QC8N7QqMFGE",hell:false},
+  {id:132,artist:"태연",title:"Fine",genre:"kpop",url:"https://www.youtube.com/watch?v=XEFj6yD8ES0",hell:false},
+  {id:133,artist:"태연",title:"Fire",genre:"kpop",url:"https://www.youtube.com/watch?v=LBJL0IMRAjI",hell:false},
+  {id:134,artist:"태연",title:"I",genre:"kpop",url:"https://www.youtube.com/watch?v=CI2B0ORVFCk",hell:false},
+  {id:135,artist:"태연",title:"UR",genre:"kpop",url:"https://www.youtube.com/watch?v=wnUQXfSiTNg",hell:false},
+  {id:136,artist:"태연",title:"11:11",genre:"kpop",url:"https://www.youtube.com/watch?v=B6zvZScNX_k",hell:false},
+  {id:137,artist:"태연",title:"why",genre:"kpop",url:"https://www.youtube.com/watch?v=Vr-wuthWLzA",hell:false},
+  {id:138,artist:"태연",title:"들리나요",genre:"kpop",url:"https://www.youtube.com/watch?v=Iw0GhfEQHvQ",hell:false},
+  {id:139,artist:"태연",title:"만약에",genre:"kpop",url:"https://www.youtube.com/watch?v=_Drjuv-5ZtI",hell:false},
+  {id:140,artist:"fx 루나 크리스탈",title:"어렵고도쉬운",genre:"kpop",url:"https://www.youtube.com/watch?v=5gfojoPjxaE",hell:false},
+  {id:141,artist:"하울 & 제이",title:"사랑인가요",genre:"kpop",url:"https://www.youtube.com/watch?v=jyOQ7GOQ-yU",hell:false},
+  {id:142,artist:"ABBA",title:"Dancing Queen",genre:"pop",url:"https://www.youtube.com/watch?v=WHayJZ3eMcE",hell:false},
+  {id:143,artist:"ABBA",title:"mamma mia",genre:"pop",url:"https://www.youtube.com/watch?v=1YN5Emwwoss",hell:false},
+  {id:144,artist:"ABBA",title:"I have a dream",genre:"pop",url:"https://www.youtube.com/watch?v=n4yhmONZimc",hell:false},
+  {id:145,artist:"Adele",title:"Someone Like You",genre:"pop",url:"https://www.youtube.com/watch?v=_vYudG78T2A",hell:false},
+  {id:146,artist:"Adele",title:"When We Were Young",genre:"pop",url:"https://www.youtube.com/watch?v=8nsX2lBHKzc",hell:false},
+  {id:147,artist:"Alicia Keys",title:"If I Ain't Got You",genre:"pop",url:"https://www.youtube.com/watch?v=M5Q0eiMzup0",hell:false},
+  {id:148,artist:"Ariana Grande",title:"Santa Tell Me",genre:"pop",url:"https://www.youtube.com/watch?v=QzFDehvDcdU",hell:false},
+  {id:149,artist:"Ariana Grande",title:"Last Christmas",genre:"pop",url:"https://www.youtube.com/watch?v=r9ucN2tSnDE",hell:false},
+  {id:150,artist:"Ariana Grande",title:"popular",genre:"pop",url:"https://www.youtube.com/watch?v=jmYYr6cZ6oo",hell:false},
+  {id:151,artist:"Ariana Grande",title:"My Everything",genre:"pop",url:"https://www.youtube.com/watch?v=YKO_nRoJnl8",hell:false},
+  {id:152,artist:"Ariana Grande",title:"We Can't Be Friends",genre:"pop",url:"https://www.youtube.com/watch?v=lNeanim75to",hell:false},
+  {id:153,artist:"Avril Lavigne",title:"Sk8er Boi",genre:"pop",url:"https://www.youtube.com/watch?v=Fm9eJoVTqf8",hell:false},
+  {id:154,artist:"Avril Lavigne",title:"What the Hell",genre:"pop",url:"https://www.youtube.com/watch?v=1A9dtcUktSY",hell:false},
+  {id:155,artist:"Beyoncé",title:"Halo",genre:"pop",url:"https://www.youtube.com/watch?v=GuOye1zkJIw",hell:false},
+  {id:156,artist:"Beyoncé",title:"Love on Top",genre:"pop",url:"https://www.youtube.com/watch?v=G1vNG0HmtTY",hell:false},
+  {id:157,artist:"Beyoncé",title:"Listen",genre:"pop",url:"https://www.youtube.com/watch?v=eN4Rn7wxUBE",hell:false},
+  {id:158,artist:"Beyoncé",title:"If I Were a Boy",genre:"pop",url:"https://www.youtube.com/watch?v=luroZeumeyo",hell:false},
+  {id:159,artist:"Beyoncé",title:"Honesty",genre:"pop",url:"https://www.youtube.com/watch?v=NdLBitdoUK8",hell:false},
+  {id:160,artist:"Beyoncé",title:"I Was Here",genre:"pop",url:"https://www.youtube.com/watch?v=IURgDagPrcA",hell:false},
+  {id:161,artist:"Bruno Mars",title:"versace on the floor",genre:"pop",url:"https://www.youtube.com/watch?v=awx7DUCWBls",hell:false},
+  {id:162,artist:"Britney Spears",title:"My Only Wish (This Year)",genre:"pop",url:"https://www.youtube.com/watch?v=zQypHMADh_U",hell:false},
+  {id:163,artist:"Britney Spears",title:"...Baby One More Time",genre:"pop",url:"https://www.youtube.com/watch?v=r6YH50RK0S0",hell:false},
+  {id:164,artist:"Britney Spears",title:"Womanizer",genre:"pop",url:"https://www.youtube.com/watch?v=efJhuhGNw4I",hell:false},
+  {id:165,artist:"Britney Spears",title:"3",genre:"pop",url:"https://www.youtube.com/watch?v=NJO7Xzi3Kv0",hell:false},
+  {id:166,artist:"Britney Spears",title:"Sometimes",genre:"pop",url:"https://www.youtube.com/watch?v=ws8vX4V93nI",hell:false},
+  {id:167,artist:"Britney Spears",title:"(You Drive Me) Crazy",genre:"pop",url:"https://www.youtube.com/watch?v=oKW0IcWfPX0",hell:false},
+  {id:168,artist:"Camila Cabello",title:"Señorita",genre:"pop",url:"https://www.youtube.com/watch?v=kC8jBnooHgs",hell:false},
+  {id:169,artist:"Celine Dion",title:"My Heart Will Go On",genre:"pop",url:"https://www.youtube.com/watch?v=cdgU8YmD3Kc",hell:false},
+  {id:170,artist:"Celine Dion",title:"The Power of Love",genre:"pop",url:"https://www.youtube.com/watch?v=515rmVVX0Fg",hell:false},
+  {id:171,artist:"Celine Dion",title:"That's the Way It Is",genre:"pop",url:"https://www.youtube.com/watch?v=lWYZc0A8uc8",hell:false},
+  {id:172,artist:"Celine Dion",title:"I'm Alive",genre:"pop",url:"https://www.youtube.com/watch?v=6-poLZPb7q0",hell:false},
+  {id:173,artist:"Celine Dion",title:"A New Day Has Come",genre:"pop",url:"https://www.youtube.com/watch?v=DJb6cE8Po5o",hell:false},
+  {id:174,artist:"Celine Dion",title:"I Surrender",genre:"pop",url:"https://www.youtube.com/watch?v=BFEU1nHMFQ4",hell:false},
+  {id:175,artist:"Christina Aguilera",title:"Fighter",genre:"pop",url:"https://www.youtube.com/watch?v=IKT4H3YmoGk",hell:false},
+  {id:176,artist:"Christina Aguilera",title:"Beautiful",genre:"pop",url:"https://www.youtube.com/watch?v=bkkkbniDtHA",hell:false},
+  {id:177,artist:"Christina Aguilera",title:"Reflection",genre:"pop",url:"https://www.youtube.com/watch?v=xr_iai07tes",hell:false},
+  {id:178,artist:"Demi Lovato",title:"Sorry Not Sorry",genre:"pop",url:"https://www.youtube.com/watch?v=8e_X3ugkkkY",hell:false},
+  {id:179,artist:"Dua Lipa",title:"Scared to Be Lonely",genre:"pop",url:"https://www.youtube.com/watch?v=yGjcCSv1x40",hell:false},
+  {id:180,artist:"Dua Lipa",title:"IDGAF",genre:"pop",url:"https://www.youtube.com/watch?v=lTRjLgI7ptI",hell:false},
+  {id:181,artist:"Ellie Goulding",title:"Love Me Like You Do",genre:"pop",url:"https://www.youtube.com/watch?v=M2z1bDi8ZvU",hell:false},
+  {id:182,artist:"Idina Menzel",title:"let it go",genre:"pop",url:"https://www.youtube.com/watch?v=8rpCPw6YiIk",hell:false},
+  {id:183,artist:"Justin Bieber",title:"love yourself",genre:"pop",url:"https://www.youtube.com/watch?v=wMwUF0qGyGA",hell:false},
+  {id:184,artist:"Jessie J",title:"Price Tag",genre:"pop",url:"https://www.youtube.com/watch?v=hyB4iyq2tmw",hell:false},
+  {id:185,artist:"Jessie J",title:"Domino",genre:"pop",url:"https://www.youtube.com/watch?v=GZ_ROLrdvPI",hell:false},
+  {id:186,artist:"Jessie J",title:"Flashlight",genre:"pop",url:"https://www.youtube.com/watch?v=pdheWX4oO1A",hell:false},
+  {id:187,artist:"Jessie J",title:"Thunder",genre:"pop",url:"https://www.youtube.com/watch?v=la0QCNcDjM4",hell:false},
+  {id:188,artist:"Jessie J",title:"Who You Are",genre:"pop",url:"https://www.youtube.com/watch?v=yeqcoU2XRYI",hell:false},
+  {id:189,artist:"Katy Perry",title:"Roar",genre:"pop",url:"https://www.youtube.com/watch?v=hMF4h0gYN-0",hell:false},
+  {id:190,artist:"Katy Perry",title:"Firework",genre:"pop",url:"https://www.youtube.com/watch?v=HiqiuUA6OxI",hell:false},
+  {id:191,artist:"Katy Perry",title:"Last Friday Night (T.G.I.F.)",genre:"pop",url:"https://www.youtube.com/watch?v=fR0wIT-jB_4",hell:false},
+  {id:192,artist:"Katy Perry",title:"Teenage Dream",genre:"pop",url:"https://www.youtube.com/watch?v=dyaVtajeW8o",hell:false},
+  {id:193,artist:"Katy Perry",title:"California Gurls",genre:"pop",url:"https://www.youtube.com/watch?v=D9Wnjg0r4uE",hell:false},
+  {id:194,artist:"Katy Perry",title:"Part of Me",genre:"pop",url:"https://www.youtube.com/watch?v=qxJy2Fnrq5Q",hell:false},
+  {id:195,artist:"Katy Perry",title:"Hot N Cold",genre:"pop",url:"https://www.youtube.com/watch?v=XSVtIxd91H0",hell:false},
+  {id:196,artist:"Katy Perry",title:"I Kissed a Girl",genre:"pop",url:"https://www.youtube.com/watch?v=61dH50RXt0Q",hell:false},
+  {id:197,artist:"Katy Perry",title:"Wide Awake",genre:"pop",url:"https://www.youtube.com/watch?v=A_bD6glkSgU",hell:false},
+  {id:198,artist:"Kelly Clarkson",title:"Stronger (What Doesn't Kill You)",genre:"pop",url:"https://www.youtube.com/watch?v=a0AB_Oh7r3M",hell:false},
+  {id:199,artist:"Kelly Clarkson",title:"Because of You",genre:"pop",url:"https://www.youtube.com/watch?v=FXi9E9z1CeU",hell:false},
+  {id:200,artist:"Kelly Clarkson",title:"A Moment Like This",genre:"pop",url:"https://www.youtube.com/watch?v=uLg7J5GHuYk",hell:false},
+  {id:201,artist:"Leona Lewis",title:"Bleeding Love",genre:"pop",url:"https://www.youtube.com/watch?v=4VXO6q_AumQ",hell:false},
+  {id:202,artist:"Leona Lewis",title:"Better in Time",genre:"pop",url:"https://www.youtube.com/watch?v=qd4RmRjF1n8",hell:false},
+  {id:203,artist:"Leona Lewis",title:"Here I Am",genre:"pop",url:"https://www.youtube.com/watch?v=MEjgW1GmN6E",hell:false},
+  {id:204,artist:"Mariah Carey",title:"All I Want for Christmas Is You",genre:"pop",url:"https://www.youtube.com/watch?v=xZjrDKRXlGg",hell:false},
+  {id:205,artist:"Mariah Carey",title:"Hero",genre:"pop",url:"https://www.youtube.com/watch?v=1nNdPl6O5Sc",hell:false},
+  {id:206,artist:"Mariah Carey",title:"Without You",genre:"pop",url:"https://www.youtube.com/watch?v=kv6VeRIA0ec",hell:false},
+  {id:207,artist:"Mariah Carey",title:"Emotions",genre:"pop",url:"https://www.youtube.com/watch?v=UHqe2_mJZDM",hell:false},
+  {id:208,artist:"Rihanna",title:"Umbrella",genre:"pop",url:"https://www.youtube.com/watch?v=bq4vuWosMBo",hell:false},
+  {id:209,artist:"Rihanna",title:"Take a Bow",genre:"pop",url:"https://www.youtube.com/watch?v=femohd7zllQ",hell:false},
+  {id:210,artist:"Rihanna",title:"Love the Way You Lie",genre:"pop",url:"https://www.youtube.com/watch?v=YHy2rGymSDs",hell:false},
+  {id:211,artist:"Rihanna",title:"California King Bed",genre:"pop",url:"https://www.youtube.com/watch?v=e37s2z8t098",hell:false},
+  {id:212,artist:"Sia",title:"Chandelier",genre:"pop",url:"https://www.youtube.com/watch?v=SMIKhvjBtv8",hell:false},
+  {id:213,artist:"Sia",title:"Titanium",genre:"pop",url:"https://www.youtube.com/watch?v=O-VFXffiu14",hell:false},
+  {id:214,artist:"Stacie Orrico",title:"Stuck",genre:"pop",url:"https://www.youtube.com/watch?v=rGKzw1sp7Fk",hell:false},
+  {id:215,artist:"Taylor Swift",title:"Cruel Summer",genre:"pop",url:"https://www.youtube.com/watch?v=avhLWpVCod0",hell:false},
+  {id:216,artist:"The Chainsmokers ft. Halsey",title:"Closer",genre:"pop",url:"https://www.youtube.com/watch?v=mhA-cGLBFww",hell:false},
+  {id:217,artist:"Whitney Houston",title:"I Will Always Love You",genre:"pop",url:"https://www.youtube.com/watch?v=5qQ0OYF4DkA",hell:false},
+  {id:218,artist:"Whitney Houston",title:"I Have Nothing",genre:"pop",url:"https://www.youtube.com/watch?v=snPcWbr6SEA",hell:false},
+  {id:219,artist:"Whitney Houston",title:"Saving All My Love for You",genre:"pop",url:"https://www.youtube.com/watch?v=YEbVzajYyLE",hell:false},
+  {id:220,artist:"Whitney Houston",title:"Run to You",genre:"pop",url:"https://www.youtube.com/watch?v=Fus6jCD8VqA",hell:false},
+];
+
+/* ── State ── */
+let songs    = JSON.parse(localStorage.getItem('maru_songs') || 'null') || DEFAULT_SONGS.map(s=>({...s}));
+let nextId   = Math.max(...songs.map(s=>s.id), 0) + 1;
+let isAdmin  = false;
+let curGenre = 'all';
+let searchQ  = '';
+let editingId = null;
+
+function save() { localStorage.setItem('maru_songs', JSON.stringify(songs)); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── 메모 (관리자만 편집) ── */
+const memoKey  = 'maru_memo';
+const memoSize = 'maru_memo_size';
+const memoEl   = document.getElementById('memoInput');
+const memoClrBtn = document.getElementById('memoClear');
+const sizeRange  = document.getElementById('memoSizeRange');
+const sizeVal    = document.getElementById('sizeVal');
+
+
+function loadMemo() {
+  const txt  = localStorage.getItem(memoKey) || '';
+  const size = parseInt(localStorage.getItem(memoSize) || '17');
+  memoEl.value = txt;
+  sizeRange.value = size;
+  sizeVal.textContent = size + 'px';
+  memoEl.style.fontSize = size + 'px';
+  // 높이 자동 조절
+  memoEl.style.height = 'auto';
+  memoEl.style.height = Math.min(memoEl.scrollHeight, 200) + 'px';
+}
+function setMemoEditable(editable) {
+  memoEl.readOnly = !editable;
+  memoClrBtn.classList.toggle('hidden', !editable);
+  const hint = document.getElementById('memoHint');
+  if (hint) hint.style.display = editable ? 'none' : 'block';
+  if (editable) memoEl.placeholder = '여기에 메모를 적어요 🌸\n예) 노래 120곡 · 헬곡 5곡';
+}
+memoEl.addEventListener('input', () => {
+  localStorage.setItem(memoKey, memoEl.value);
+  memoEl.style.height = 'auto';
+  memoEl.style.height = Math.min(memoEl.scrollHeight, 200) + 'px';
+});
+memoClrBtn.addEventListener('click', () => {
+  memoEl.value = '';
+  memoEl.style.height = 'auto';
+  localStorage.removeItem(memoKey);
+  memoEl.focus();
+});
+document.getElementById('memSizeToggle').addEventListener('click', () => {
+  document.getElementById('sizePanel').classList.toggle('open');
+});
+sizeRange.addEventListener('input', () => {
+  const v = sizeRange.value;
+  sizeVal.textContent = v + 'px';
+  memoEl.style.fontSize = v + 'px';
+  localStorage.setItem(memoSize, v);
+  memoEl.style.height = 'auto';
+  memoEl.style.height = Math.min(memoEl.scrollHeight, 200) + 'px';
+});
+
+loadMemo();
+setMemoEditable(false);
+
+/* ── Filter ── */
+function filtered() {
+  const q = searchQ.toLowerCase();
+  return songs.filter(s => {
+    let gm;
+    if (curGenre === 'all') gm = true;
+    else if (curGenre === 'hell') gm = !!s.hell;
+    else gm = s.genre === curGenre;
+    const tm = !q || s.artist.toLowerCase().includes(q) || s.title.toLowerCase().includes(q);
+    return gm && tm;
+  });
+}
+
+/* ── Render ── */
+function render() {
+  const list = filtered();
+  document.getElementById('count').textContent = `총 ${list.length}곡`;
+  const el = document.getElementById('songList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="emoji">🎵</div><p>검색 결과가 없어요~</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(s => {
+    if (isAdmin && editingId === s.id) {
+      return `<div class="song-card edit-mode" data-id="${s.id}">
+        <div class="edit-row">
+          <div class="edit-field"><label>가수명</label><input id="ea${s.id}" value="${esc(s.artist)}" /></div>
+          <div class="edit-field"><label>제목</label><input id="et${s.id}" value="${esc(s.title)}" /></div>
+        </div>
+        <div class="edit-row">
+          <div class="edit-field" style="max-width:140px"><label>장르</label>
+            <select id="eg${s.id}">
+              <option value="kpop"${s.genre==='kpop'?' selected':''}>K-pop</option>
+              <option value="pop"${s.genre==='pop'?' selected':''}>Pop</option>
+              <option value="jpop"${s.genre==='jpop'?' selected':''}>J-pop</option>
+            </select>
+          </div>
+          <div class="edit-field wide"><label>MR 링크</label><input id="eu${s.id}" value="${esc(s.url)}" placeholder="https://..." /></div>
+        </div>
+        <div class="edit-hell-row">
+          <input type="checkbox" id="eh${s.id}" ${s.hell?'checked':''} />
+          <label for="eh${s.id}">🔥 헬곡으로 표시</label>
+        </div>
+        <div class="edit-actions">
+          <button class="btn-destroy" onclick="deleteSong(${s.id})">🗑️ 삭제</button>
+          <div class="edit-right">
+            <button class="btn-cancel-sm" onclick="cancelEdit()">취소</button>
+            <button class="btn-save-sm" onclick="saveEdit(${s.id})">저장</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    const genreBadge = s.genre==='kpop' ? '<span class="genre-badge badge-kpop">K-pop</span>'
+      : s.genre==='jpop' ? '<span class="genre-badge badge-jpop">J-pop</span>'
+      : '<span class="genre-badge badge-pop">Pop</span>';
+    const hellBadge = s.hell ? '<span class="badge-hell">🔥 헬곡</span>' : '';
+    const link = s.url
+      ? `<a class="mr-link" href="${esc(s.url)}" target="_blank">🎵 MR링크</a>`
+      : `<span class="no-link-txt">링크 없음</span>`;
+    const adminBtns = isAdmin ? `<div class="card-admin-btns">
+      <button class="btn-edit-sm" onclick="startEdit(${s.id})">✏️ 수정</button>
+      <button class="btn-del-sm" onclick="deleteSong(${s.id})">🗑️ 삭제</button>
+    </div>` : '';
+    return `<div class="song-card${s.hell?' hell-card':''}" data-id="${s.id}">
+      <div class="song-info">
+        <div class="artist-name">${esc(s.artist)}</div>
+        <div class="song-title">${esc(s.title)}</div>
+        <div class="badges">${genreBadge}${hellBadge}</div>
+      </div>
+      <div class="song-right">${link}${adminBtns}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Edit helpers ── */
+function startEdit(id) { editingId=id; render(); document.querySelector(`.song-card[data-id="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}); }
+function cancelEdit() { editingId=null; render(); }
+function saveEdit(id) {
+  const idx = songs.findIndex(s=>s.id===id);
+  if (idx<0) return;
+  const artist = document.getElementById('ea'+id).value.trim();
+  const title  = document.getElementById('et'+id).value.trim();
+  if (!artist||!title) { toast('가수명과 제목은 필수예요!'); return; }
+  songs[idx] = {...songs[idx], artist, title, genre:document.getElementById('eg'+id).value, url:document.getElementById('eu'+id).value.trim(), hell:document.getElementById('eh'+id).checked};
+  save(); editingId=null; render(); toast('저장했어요 ✓');
+}
+function deleteSong(id) {
+  if (!confirm('이 곡을 삭제할까요?')) return;
+  songs = songs.filter(s=>s.id!==id);
+  save(); if (editingId===id) editingId=null; render(); toast('삭제했어요');
+}
+
+/* ── Tabs ── */
+document.getElementById('tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab');
+  if (!t) return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  curGenre = t.dataset.genre;
+  editingId = null;
+  render();
+});
+
+/* ── Search ── */
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQ = e.target.value;
+  document.getElementById('clearBtn').classList.toggle('show', !!searchQ);
+  render();
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  document.getElementById('searchInput').value = '';
+  searchQ = '';
+  document.getElementById('clearBtn').classList.remove('show');
+  render();
+});
+
+/* ── Add song ── */
+function clearAddForm() {
+  ['nArtist','nTitle','nUrl'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nGenre').value='kpop';
+  document.getElementById('nHell').checked=false;
+}
+document.getElementById('clearFormBtn').addEventListener('click', clearAddForm);
+document.getElementById('addOkBtn').addEventListener('click', () => {
+  const artist = document.getElementById('nArtist').value.trim();
+  const title  = document.getElementById('nTitle').value.trim();
+  if (!artist||!title) { toast('가수명과 제목을 입력해주세요!'); return; }
+  songs.push({id:nextId++, artist, title, genre:document.getElementById('nGenre').value, url:document.getElementById('nUrl').value.trim(), hell:document.getElementById('nHell').checked});
+  save(); clearAddForm(); render(); toast('추가했어요 ✓');
+  document.getElementById('nArtist').focus();
+});
+['nArtist','nTitle','nUrl'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('addOkBtn').click(); });
+});
+
+/* ── Admin login ── */
+document.getElementById('gearBtn').addEventListener('click', () => {
+  if (isAdmin) return;
+  document.getElementById('pwInput').value='';
+  document.getElementById('modalErr').textContent='';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('pwInput').focus(), 60);
+});
+document.getElementById('modalCancelBtn').addEventListener('click', ()=>document.getElementById('modalOverlay').classList.remove('open'));
+document.getElementById('modalOkBtn').addEventListener('click', () => {
+  const pw = document.getElementById('pwInput').value;
+  if (!pw) { document.getElementById('modalErr').textContent='비밀번호를 입력해주세요.'; return; }
+  if (pw===ADMIN_PW) {
+    isAdmin=true;
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.getElementById('adminBanner').classList.add('on');
+    document.getElementById('addPanel').classList.add('on');
+    document.getElementById('gearBtn').classList.add('on');
+    setMemoEditable(true);
+    render(); toast('관리자 모드 ✓');
+  } else {
+    document.getElementById('modalErr').textContent='비밀번호가 틀렸어요.';
+    document.getElementById('pwInput').select();
+  }
+});
+document.getElementById('pwInput').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('modalOkBtn').click(); });
+
+/* ── Logout ── */
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  isAdmin=false; editingId=null;
+  ['adminBanner','addPanel'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('gearBtn').classList.remove('on');
+  setMemoEditable(false);
+  document.getElementById('sizePanel').classList.remove('open');
+  render(); toast('로그아웃 됐어요');
+});
+
+render();
+</script>
+</body>
+</html>
