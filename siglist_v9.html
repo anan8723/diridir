@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>시그리스트</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Noto+Sans+KR:wght@400;700;900&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Pen+Script&family=Gaegu:wght@700&family=Gothic+A1:wght@400;700;900&family=Gowun+Dodum&family=Gugi&family=Cute+Font&family=East+Sea+Dokdo&family=Gamja+Flower&family=Sunflower:wght@700&family=Poor+Story&family=Noto+Serif+KR:wght@400;700&family=Nanum+Myeongjo:wght@700&family=Bebas+Neue&family=Anton&family=Bangers&family=Fredoka+One&family=Pacifico&family=Lobster&family=Press+Start+2P&family=Permanent+Marker&family=Dancing+Script:wght@700&family=Righteous&display=swap" rel="stylesheet">
+<style>
+/* ──────── RESET ──────── */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden}
+
+/* ──────── CHROMAKEY OVERLAY ──────── */
+#overlay{
+  position:fixed;top:0;left:0;
+  width:100%;height:100%;
+  background:#00ff00;
+  z-index:1;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:flex-start;
+  padding:24px;
+}
+#clip{overflow:hidden;position:relative;flex-shrink:0}
+#track{display:flex;flex-direction:column;position:relative}
+
+/* ──────── PANEL (완전히 분리된 레이어) ──────── */
+#panel{
+  position:fixed;top:0;right:0;
+  width:440px;height:100vh;
+  background:#0f0f1a;
+  color:#e8e8ff;
+  z-index:9999;
+  overflow-y:auto;overflow-x:hidden;
+  display:none;
+  flex-direction:column;
+  border-left:2px solid #333355;
+  font-family:'Noto Sans KR',sans-serif;
+}
+#panel::-webkit-scrollbar{width:4px}
+#panel::-webkit-scrollbar-thumb{background:#444;border-radius:4px}
+
+/* ──────── PW POPUP ──────── */
+#pw-popup{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.8);
+  z-index:99999;
+  display:none;
+  align-items:center;justify-content:center;
+}
+
+/* ──────── OPEN BTN ──────── */
+#ptbtn{
+  position:fixed;top:10px;right:10px;
+  z-index:99998;
+  background:rgba(20,10,50,0.95);
+  color:#c084fc;border:1px solid #7c6fff;
+  border-radius:8px;padding:7px 16px;
+  cursor:pointer;font-size:13px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;
+  box-shadow:0 2px 16px #0009;
+}
+
+/* ──────── TOAST ──────── */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#10b981;color:#fff;
+  padding:8px 22px;border-radius:20px;
+  font-size:13px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;
+  z-index:99999;opacity:0;transition:opacity .3s;
+  pointer-events:none;
+}
+#toast.show{opacity:1}
+
+/* ──────── ROW TYPES ──────── */
+.sig-item{display:flex;align-items:center;white-space:nowrap;cursor:pointer;pointer-events:auto}
+.sig-item.done{opacity:0.3}
+.sig-spacer{display:block;flex-shrink:0}
+
+/* ──────── BADGES ──────── */
+.badge{display:inline-block;font-weight:900;padding:1px 7px;border-radius:999px;vertical-align:middle;margin-left:6px;line-height:1.6;flex-shrink:0}
+@keyframes hotFlame{0%{background-position:50% 100%}50%{background-position:50% 0%}100%{background-position:50% 100%}}
+@keyframes hotGlow{0%,100%{text-shadow:0 0 6px #ff69b4}50%{text-shadow:0 0 14px #ff00aa}}
+@keyframes hotScale{0%,100%{transform:scale(1)}40%{transform:scale(1.09)}}
+.badge-hot{background:linear-gradient(180deg,#ff88cc,#ff2266,#ff6600,#ff2266,#ff88cc);background-size:100% 300%;color:#fff;animation:hotFlame 1.2s ease-in-out infinite,hotGlow 1.2s ease-in-out infinite,hotScale 1.4s ease-in-out infinite}
+@keyframes newWave{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes newFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px) scale(1.06)}}
+.badge-new{background:linear-gradient(135deg,#00ccff,#0044ff,#00aaff,#00eeff);background-size:300% 300%;color:#fff;animation:newWave 2s ease infinite,newFloat 2s ease-in-out infinite}
+@keyframes pickSparkle{0%,100%{filter:brightness(1)}25%{filter:brightness(1.6)}75%{filter:brightness(1.8)}}
+@keyframes pickStar{0%,100%{text-shadow:0 0 6px #dd88ff}50%{text-shadow:0 0 18px #fff,0 0 8px #cc44ff}}
+.badge-pick{background:linear-gradient(135deg,#cc44ff,#8800ff,#ff44ff,#aa00dd);background-size:200% 200%;color:#fff;animation:pickSparkle 1.6s ease infinite,pickStar 1.4s ease-in-out infinite}
+@keyframes upPulse{0%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
+@keyframes upGlow{0%,100%{text-shadow:0 0 8px #ff0044}50%{text-shadow:0 0 20px #ff0055,0 0 8px #ff6600}}
+.badge-up{background:linear-gradient(180deg,#ff6644,#ff0033,#cc0022,#ff0033,#ff6644);background-size:100% 300%;color:#fff;border:1.5px solid #ff003388;animation:upPulse 1s ease-in-out infinite,upGlow 1s ease-in-out infinite}
+.badge-done{background:#22aa66;color:#fff}
+
+/* ──────── FX KEYFRAMES ──────── */
+@keyframes fxRainbow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes fxNeon{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes fxBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes fxWave{0%,100%{transform:skewX(-2deg)}50%{transform:skewX(2deg)}}
+@keyframes fxShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes fxGlitch{0%,100%{transform:translate(0)}20%{transform:translate(-3px,1px)}40%{transform:translate(3px,-1px)}60%{transform:translate(-1px,2px)}80%{transform:translate(2px,-2px)}}
+@keyframes fxZoom{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes fxSpin{0%{transform:perspective(500px) rotateY(0)}100%{transform:perspective(500px) rotateY(360deg)}}
+
+/* ──────── PANEL UI ──────── */
+:root{--p:#0f0f1a;--p2:#1a1a2e;--p3:#22223a;--bd:#333355;--acc:#7c6fff;--acc2:#c084fc;--tx:#e8e8ff;--mt:#888aaa}
+.phead{padding:12px 14px 10px;background:linear-gradient(135deg,#1a1a3e,#0f0f25);border-bottom:1px solid var(--bd)}
+.phead h1{font-size:14px;font-weight:900;color:#fff}
+.phead p{font-size:10px;color:var(--mt);margin-top:2px}
+.tb{display:flex;border-bottom:1px solid var(--bd);background:var(--p2)}
+.t{flex:1;padding:9px 2px;font-size:10px;font-weight:700;color:var(--mt);cursor:pointer;text-align:center;border-bottom:2px solid transparent;transition:all .15s}
+.t:hover{color:var(--tx)}.t.on{color:#fff;border-bottom-color:var(--acc2)}
+.ph{padding:9px 14px;background:var(--p2);border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mt);letter-spacing:.8px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.ph:hover{color:var(--tx)}
+.ph .arr{transition:transform .2s}.ph.coll .arr{transform:rotate(-90deg)}
+.psec{padding:11px 13px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--bd)}
+.psec.hidden{display:none}
+label{font-size:11px;color:var(--mt);display:block;margin-bottom:1px}
+input[type=text],input[type=number],select,textarea{
+  width:100%;background:#0d0d1e;border:1px solid var(--bd);
+  border-radius:5px;color:var(--tx);padding:5px 8px;
+  font-size:12px;font-family:'Noto Sans KR',sans-serif;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+textarea{resize:vertical;min-height:90px;line-height:1.7}
+input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
+input[type=color]{width:30px;height:24px;border:none;border-radius:4px;cursor:pointer;padding:0;background:none}
+input[type=checkbox],input[type=radio]{accent-color:var(--acc);cursor:pointer}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.row label{margin:0}
+.rr{display:flex;align-items:center;gap:5px}
+.rr>label{margin:0;white-space:nowrap;min-width:72px;font-size:11px;color:var(--mt)}
+.rr>input[type=range]{flex:1;min-width:0}
+.rv{font-size:11px;color:#aaa;min-width:28px;text-align:right;flex-shrink:0}
+.rr>input[type=number]{width:52px!important;flex-shrink:0;text-align:center;padding:2px 4px!important;font-size:11px!important;step:1}
+button{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:5px;padding:7px 12px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Noto Sans KR',sans-serif;transition:opacity .15s;white-space:nowrap}
+button:hover{opacity:.8}
+button.sec{background:rgba(255,255,255,.08);border:1px solid var(--bd);color:var(--tx)}
+button.red{background:linear-gradient(135deg,#ef4444,#b91c1c)}
+button.grn{background:linear-gradient(135deg,#10b981,#047857)}
+button.orn{background:linear-gradient(135deg,#f59e0b,#b45309)}
+button.prp{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.brow{display:flex;gap:5px;flex-wrap:wrap}
+.sw{width:21px;height:21px;border-radius:4px;cursor:pointer;border:2px solid transparent;flex-shrink:0}
+.sw:hover{border-color:#fff8}.sw.on{border-color:#fff}
+.fp-prev{background:var(--p3);border-radius:5px;padding:5px 9px;font-size:15px;color:#fff;border:1px solid var(--bd);margin-top:2px}
+.ab{background:var(--p3);border:2px solid transparent;color:var(--mt);border-radius:6px;padding:8px 6px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Noto Sans KR',sans-serif;text-align:center;transition:all .15s;line-height:1.3;width:100%;display:block}
+.ab:hover{border-color:var(--acc);color:#fff}
+.ab.on{background:rgba(124,111,255,.35);border-color:var(--acc2);color:#fff}
+.ab.red{background:rgba(239,68,68,.2);border-color:#ef4444;color:#fca5a5}
+.ag{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.pb{background:var(--p3);border:1px solid var(--bd);color:var(--mt);border-radius:5px;padding:6px 2px;cursor:pointer;font-size:10px;font-weight:700;font-family:'Noto Sans KR',sans-serif;text-align:center;transition:all .15s}
+.pb:hover{border-color:var(--acc)}.pb.on{background:rgba(124,111,255,.3);border-color:var(--acc2);color:#fff}
+.sdiv{height:1px;background:var(--bd);margin:2px 0}
+.sr{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.eq{display:flex;flex-wrap:wrap;gap:3px}
+.eb{background:var(--p3);border:1px solid var(--bd);border-radius:4px;padding:2px 4px;cursor:pointer;font-size:15px;line-height:1}.eb:hover{background:rgba(124,111,255,.35)}
+/* EDITOR TABLE */
+#leditor{width:100%;border-collapse:collapse;font-size:11px}
+#leditor th{background:var(--p3);color:var(--mt);padding:4px 5px;text-align:left;font-weight:600;border-bottom:1px solid var(--bd);font-size:10px}
+#leditor td{padding:2px 3px;border-bottom:1px solid #1e1e30;vertical-align:middle}
+#leditor td input[type=text]{background:transparent;border:none;border-bottom:1px solid #333;border-radius:0;color:var(--tx);font-size:11px;padding:2px 3px;width:100%}
+#leditor td input[type=text]:focus{border-bottom-color:var(--acc);outline:none}
+#leditor td select{background:#0d0d1e;border:1px solid #333;color:#ddd;font-size:10px;border-radius:3px;padding:1px 2px;width:100%}
+.dh{color:#555;cursor:grab;padding:0 3px;font-size:13px;user-select:none}.dh:hover{color:#888}
+.dbtn{background:none;border:none;color:#555;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px}.dbtn:hover{color:#ef4444}
+.cdot{width:14px;height:14px;border-radius:50%;border:1px solid #555;cursor:pointer;flex-shrink:0;display:inline-block}
+/* POPUPS */
+.popup{position:fixed;background:#1a1a2e;border:1px solid var(--bd);border-radius:8px;padding:12px;z-index:99999;display:none;flex-direction:column;gap:7px;box-shadow:0 4px 24px #000b;min-width:200px}
+.popup.open{display:flex}
+</style>
+</head>
+<body>
+
+<!-- ── CHROMAKEY SCREEN ── -->
+<div id="overlay">
+  <div id="clip">
+    <div id="track"></div>
+  </div>
+</div>
+
+<!-- ── PANEL OPEN BUTTON ── -->
+<button id="ptbtn" onclick="togglePanel()">⚙️ 패널 열기</button>
+
+<!-- ── TOAST ── -->
+<div id="toast">💾 저장됨</div>
+
+<!-- ── PANEL ── -->
+<div id="panel">
+  <div class="phead">
+    <h1>🎤 시그리스트</h1>
+    <p>비밀번호로 보호된 편집 패널</p>
+  </div>
+  <div class="tb">
+    <div class="t on" onclick="switchTab('list')">📋 리스트</div>
+    <div class="t" onclick="switchTab('style')">🎨 스타일</div>
+    <div class="t" onclick="switchTab('anim')">🎬 움직임</div>
+    <div class="t" onclick="switchTab('layout')">📐 레이아웃</div>
+  </div>
+
+  <!-- LIST -->
+  <div id="tab-list">
+    <div class="ph" onclick="tg(this)">📥 붙여넣기 파싱 <span class="arr">▾</span></div>
+    <div class="psec">
+      <label style="color:#aaa;font-size:10px">[제목] 섹션 구분 / 빈 줄 = 공백</label>
+      <textarea id="raw" placeholder="[시그]&#10;1 캠리톨겟&#10;&#10;[메뉴]&#10;│32💖피카츄"></textarea>
+      <div class="brow">
+        <button class="grn" onclick="parseRaw()">✅ 불러오기</button>
+        <button class="red" onclick="clearAll()">🗑️ 비우기</button>
+      </div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">✏️ 직접 편집 <span class="arr">▾</span></div>
+    <div class="psec" style="padding:7px 8px">
+      <div style="overflow-x:auto;max-height:360px;overflow-y:auto">
+        <table id="leditor">
+          <thead><tr>
+            <th style="width:14px"></th>
+            <th style="width:24px">타입</th>
+            <th style="width:36px">번호</th>
+            <th>텍스트</th>
+            <th style="width:28px">이모지</th>
+            <th style="width:52px">뱃지</th>
+            <th style="width:18px">색</th>
+            <th style="width:16px"></th>
+          </tr></thead>
+          <tbody id="ebody"></tbody>
+        </table>
+      </div>
+      <div class="brow" style="margin-top:5px">
+        <button class="grn" onclick="addItem()">+ 항목</button>
+        <button class="prp" onclick="addHeader()">+ 제목</button>
+        <button class="sec" onclick="addSpacer()">+ 공백</button>
+        <button onclick="fullRender()">✅ 적용</button>
+      </div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">😊 이모지 & 위치 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row">
+        <label><input type="radio" name="epos" value="before-num" onchange="fullRender()"> 번호 앞</label>
+        <label><input type="radio" name="epos" value="after-num" checked onchange="fullRender()"> 번호 뒤</label>
+        <label><input type="radio" name="epos" value="before-txt" onchange="fullRender()"> 텍스트 앞</label>
+        <label><input type="radio" name="epos" value="after-txt" onchange="fullRender()"> 텍스트 뒤</label>
+        <label><input type="radio" name="epos" value="none" onchange="fullRender()"> 없음</label>
+      </div>
+      <input type="text" id="defemoji" value="💖" oninput="fullRender()">
+      <div class="eq" id="eqk"></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">🏷 뱃지 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="rr"><label>크기</label><input type="range" id="bdgsz" min="8" max="22" value="11" oninput="fullRender();syncRV('bdgsz','px')"><span class="rv" id="bdgszV">11px</span><input type="number" id="bdgszN" value="11" step="1" oninput="syncNR('bdgsz',this)"></div>
+      <div class="row"><span class="badge badge-hot" style="font-size:13px">HOT</span><input type="text" id="bt-hot" value="HOT 🔥" style="width:90px" oninput="fullRender()"></div>
+      <div class="row"><span class="badge badge-new" style="font-size:13px">NEW</span><input type="text" id="bt-new" value="NEW 💧" style="width:90px" oninput="fullRender()"></div>
+      <div class="row"><span class="badge badge-pick" style="font-size:13px">PICK</span><input type="text" id="bt-pick" value="✦ PICK" style="width:90px" oninput="fullRender()"></div>
+      <div class="row"><span class="badge badge-up" style="font-size:13px">🔞</span><input type="text" id="bt-up" value="🔞" style="width:90px" oninput="fullRender()"></div>
+      <div class="row"><span class="badge badge-done" style="font-size:13px">DONE</span><input type="text" id="bt-done" value="✓ DONE" style="width:90px" oninput="fullRender()"></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">💾 저장 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row"><input type="checkbox" id="autosave" checked><label>패널 닫을 때 자동 저장</label></div>
+      <div class="brow">
+        <button class="grn" onclick="saveNow()">💾 저장하기</button>
+        <button class="orn" onclick="loadSaved()">📂 불러오기</button>
+        <button class="red" onclick="clearSaved()">🗑️ 저장 삭제</button>
+      </div>
+      <div id="save-info" style="font-size:10px;color:#666">저장된 데이터 없음</div>
+    </div>
+  </div>
+
+  <!-- STYLE -->
+  <div id="tab-style" style="display:none">
+    <div class="ph" onclick="tg(this)">🔤 항목 폰트 <span class="arr">▾</span></div>
+    <div class="psec">
+      <select id="ff" onchange="fullRender()">
+        <optgroup label="🇰🇷 고딕">
+          <option value="'Black Han Sans',sans-serif" selected>블랙한산스 ★</option>
+          <option value="'Jua',sans-serif">주아</option>
+          <option value="'Do Hyeon',sans-serif">도현</option>
+          <option value="'Noto Sans KR',sans-serif">노토산스</option>
+          <option value="'Nanum Gothic',sans-serif">나눔고딕</option>
+          <option value="'Gothic A1',sans-serif">Gothic A1</option>
+          <option value="'Gowun Dodum',sans-serif">고운돋움</option>
+          <option value="'Gugi',sans-serif">구기</option>
+          <option value="'Sunflower',sans-serif">해바라기</option>
+        </optgroup>
+        <optgroup label="🇰🇷 손글씨">
+          <option value="'Gaegu',cursive">개구</option>
+          <option value="'Nanum Pen Script',cursive">나눔펜</option>
+          <option value="'Poor Story',cursive">가난한이야기</option>
+          <option value="'Cute Font',cursive">귀여운폰트</option>
+          <option value="'East Sea Dokdo',cursive">동해독도</option>
+          <option value="'Gamja Flower',cursive">감자꽃</option>
+        </optgroup>
+        <optgroup label="🇰🇷 명조">
+          <option value="'Noto Serif KR',serif">노토세리프</option>
+          <option value="'Nanum Myeongjo',serif">나눔명조</option>
+        </optgroup>
+        <optgroup label="🌐 영문">
+          <option value="'Bebas Neue',cursive">BEBAS NEUE</option>
+          <option value="'Anton',sans-serif">ANTON</option>
+          <option value="'Bangers',cursive">Bangers</option>
+          <option value="'Fredoka One',cursive">Fredoka One</option>
+          <option value="'Pacifico',cursive">Pacifico</option>
+          <option value="'Lobster',cursive">Lobster</option>
+          <option value="'Dancing Script',cursive">Dancing Script</option>
+          <option value="'Permanent Marker',cursive">Permanent Marker</option>
+          <option value="'Righteous',cursive">Righteous</option>
+          <option value="'Press Start 2P',cursive">Press Start 2P</option>
+        </optgroup>
+      </select>
+      <div class="fp-prev" id="fprev">가나다 ABC 123 🎵</div>
+      <div class="rr"><label>크기</label><input type="range" id="fs" min="10" max="110" value="36" oninput="fullRender();syncRV('fs','px')"><span class="rv" id="fsV">36px</span><input type="number" id="fsN" value="36" step="1" oninput="syncNR('fs',this)"></div>
+      <div class="rr"><label>굵기</label><input type="range" id="fw" min="100" max="900" step="100" value="700" oninput="fullRender();syncRV('fw','')"><span class="rv" id="fwV">700</span><input type="number" id="fwN" value="700" step="100" oninput="syncNR('fw',this)"></div>
+      <div class="rr"><label>자간</label><input type="range" id="ls" min="-3" max="20" step="1" value="0" oninput="fullRender();syncRV('ls','px')"><span class="rv" id="lsV">0px</span><input type="number" id="lsN" value="0" step="1" oninput="syncNR('ls',this)"></div>
+      <div class="rr"><label>줄간격</label><input type="range" id="lh" min="0.8" max="3" step="0.1" value="1.3" oninput="fullRender();syncRV('lh','')"><span class="rv" id="lhV">1.3</span><input type="number" id="lhN" value="1.3" step="0.1" oninput="syncNR('lh',this)"></div>
+      <div class="row">
+        <label><input type="checkbox" id="ck-i" onchange="fullRender()"> 기울임</label>
+        <label><input type="checkbox" id="ck-u" onchange="fullRender()"> 밑줄</label>
+        <label><input type="checkbox" id="ck-s" onchange="fullRender()"> 취소선</label>
+        <label><input type="checkbox" id="ck-uc" onchange="fullRender()"> 대문자</label>
+      </div>
+    </div>
+
+    <div class="ph" onclick="tg(this)" style="background:#1e1a35">🏷️ 제목 폰트 <span class="arr">▾</span></div>
+    <div class="psec" style="background:#12102a">
+      <div class="row"><input type="checkbox" id="hdr-own" checked onchange="fullRender()"><label>별도 설정 사용</label></div>
+      <select id="hff" onchange="fullRender()">
+        <option value="'Black Han Sans',sans-serif" selected>블랙한산스 ★</option>
+        <option value="'Jua',sans-serif">주아</option>
+        <option value="'Noto Sans KR',sans-serif">노토산스</option>
+        <option value="'Bebas Neue',cursive">BEBAS NEUE</option>
+        <option value="'Pacifico',cursive">Pacifico</option>
+        <option value="'Press Start 2P',cursive">Press Start 2P</option>
+      </select>
+      <div class="rr"><label>크기</label><input type="range" id="hfs" min="10" max="120" value="44" oninput="fullRender();syncRV('hfs','px')"><span class="rv" id="hfsV">44px</span><input type="number" id="hfsN" value="44" step="1" oninput="syncNR('hfs',this)"></div>
+      <div class="rr"><label>굵기</label><input type="range" id="hfw" min="100" max="900" step="100" value="900" oninput="fullRender();syncRV('hfw','')"><span class="rv" id="hfwV">900</span><input type="number" id="hfwN" value="900" step="100" oninput="syncNR('hfw',this)"></div>
+      <div class="rr"><label>자간</label><input type="range" id="hls" min="-3" max="20" step="1" value="1" oninput="fullRender();syncRV('hls','px')"><span class="rv" id="hlsV">1px</span><input type="number" id="hlsN" value="1" step="1" oninput="syncNR('hls',this)"></div>
+      <div class="row">
+        <label><input type="checkbox" id="hck-i" onchange="fullRender()"> 기울임</label>
+        <label><input type="checkbox" id="hck-uc" onchange="fullRender()"> 대문자</label>
+      </div>
+      <div class="sdiv"></div>
+      <label>기본 제목 색상 <span style="color:#555;font-size:10px">(섹션별 개별색 → 편집표 색점)</span></label>
+      <div class="row">
+        <input type="color" id="hnc" value="#FFD700" oninput="fullRender()">
+        <div class="sr">
+          <div class="sw" style="background:#FFD700" onclick="sc('hnc','#FFD700')"></div>
+          <div class="sw" style="background:#fff;border:1px solid #555" onclick="sc('hnc','#ffffff')"></div>
+          <div class="sw" style="background:#FF69B4" onclick="sc('hnc','#FF69B4')"></div>
+          <div class="sw" style="background:#00FFFF" onclick="sc('hnc','#00FFFF')"></div>
+          <div class="sw" style="background:#7FFF00" onclick="sc('hnc','#7FFF00')"></div>
+          <div class="sw" style="background:#CC44FF" onclick="sc('hnc','#CC44FF')"></div>
+          <div class="sw" style="background:#FF4444" onclick="sc('hnc','#FF4444')"></div>
+          <div class="sw" style="background:#00FF80" onclick="sc('hnc','#00FF80')"></div>
+        </div>
+      </div>
+      <label>테두리</label>
+      <div class="row">
+        <input type="color" id="hnsc" value="#000000" oninput="fullRender()">
+        <input type="range" id="hnsw" min="0" max="18" step="1" value="3" oninput="fullRender();syncRV('hnsw','px')">
+        <span class="rv" id="hnswV">3px</span>
+        <input type="number" id="hnswN" value="3" step="1" oninput="syncNR('hnsw',this)">
+      </div>
+      <div class="rr"><label>들여쓰기</label><input type="range" id="hind" min="-100" max="200" step="1" value="0" oninput="fullRender();syncRV('hind','px')"><span class="rv" id="hindV">0px</span><input type="number" id="hindN" value="0" step="1" oninput="syncNR('hind',this)"></div>
+      <div class="rr"><label>위 여백</label><input type="range" id="hmt" min="0" max="60" step="1" value="8" oninput="fullRender();syncRV('hmt','px')"><span class="rv" id="hmtV">8px</span><input type="number" id="hmtN" value="8" step="1" oninput="syncNR('hmt',this)"></div>
+      <div class="rr"><label>아래 여백</label><input type="range" id="hmb" min="0" max="60" step="1" value="4" oninput="fullRender();syncRV('hmb','px')"><span class="rv" id="hmbV">4px</span><input type="number" id="hmbN" value="4" step="1" oninput="syncNR('hmb',this)"></div>
+      <div class="row"><label>정렬</label><select id="halign" onchange="fullRender()" style="width:auto"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">🔢 번호 색상 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row"><input type="color" id="nc" value="#FF4444" oninput="fullRender()"><div class="sr" id="nc-sw"></div></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">📝 텍스트 색상 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row"><input type="color" id="tc" value="#FFFFFF" oninput="fullRender()"><div class="sr" id="tc-sw"></div></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">✏️ 테두리 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row"><label>번호</label><input type="color" id="nsc" value="#000000" oninput="fullRender()"><input type="range" id="nsw" min="0" max="18" step="1" value="4" oninput="fullRender();syncRV('nsw','px')"><span class="rv" id="nswV">4px</span><input type="number" id="nswN" value="4" step="1" oninput="syncNR('nsw',this)"></div>
+      <div class="row"><label>텍스트</label><input type="color" id="tsc" value="#000000" oninput="fullRender()"><input type="range" id="tsw" min="0" max="18" step="1" value="3" oninput="fullRender();syncRV('tsw','px')"><span class="rv" id="tswV">3px</span><input type="number" id="tswN" value="3" step="1" oninput="syncNR('tsw',this)"></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">💫 그림자 & 네온 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row"><input type="checkbox" id="shon" checked onchange="fullRender()"><label>그림자</label><input type="color" id="shc" value="#000000" oninput="fullRender()"></div>
+      <div class="rr"><label>X</label><input type="range" id="shx" min="-20" max="20" step="1" value="2" oninput="fullRender();syncRV('shx','px')"><span class="rv" id="shxV">2px</span><input type="number" id="shxN" value="2" step="1" oninput="syncNR('shx',this)"></div>
+      <div class="rr"><label>Y</label><input type="range" id="shy" min="-20" max="20" step="1" value="2" oninput="fullRender();syncRV('shy','px')"><span class="rv" id="shyV">2px</span><input type="number" id="shyN" value="2" step="1" oninput="syncNR('shy',this)"></div>
+      <div class="rr"><label>블러</label><input type="range" id="shb" min="0" max="40" step="1" value="4" oninput="fullRender();syncRV('shb','px')"><span class="rv" id="shbV">4px</span><input type="number" id="shbN" value="4" step="1" oninput="syncNR('shb',this)"></div>
+      <div class="row"><input type="checkbox" id="neon" onchange="fullRender()"><label>네온 글로우</label><input type="color" id="neonc" value="#00FFFF" oninput="fullRender()"></div>
+      <div class="rr"><label>강도</label><input type="range" id="neons" min="5" max="60" step="1" value="20" oninput="fullRender();syncRV('neons','px')"><span class="rv" id="neonsV">20px</span><input type="number" id="neonsN" value="20" step="1" oninput="syncNR('neons',this)"></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">🎨 항목 배경 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row"><input type="checkbox" id="ibg" onchange="fullRender()"><label>켜기</label><input type="color" id="ibgc" value="#000000" oninput="fullRender()"><input type="range" id="ibga" min="0" max="100" step="1" value="50" oninput="fullRender();syncRV('ibga','%')"><span class="rv" id="ibgaV">50%</span><input type="number" id="ibgaN" value="50" step="1" oninput="syncNR('ibga',this)"></div>
+      <div class="rr"><label>둥글기</label><input type="range" id="ibgr" min="0" max="40" step="1" value="8" oninput="fullRender();syncRV('ibgr','px')"><span class="rv" id="ibgrV">8px</span><input type="number" id="ibgrN" value="8" step="1" oninput="syncNR('ibgr',this)"></div>
+      <div class="rr"><label>패딩</label><input type="range" id="ibgp" min="0" max="40" step="1" value="8" oninput="fullRender();syncRV('ibgp','px')"><span class="rv" id="ibgpV">8px</span><input type="number" id="ibgpN" value="8" step="1" oninput="syncNR('ibgp',this)"></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">🎨 스타일 랜덤 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="brow">
+        <button class="orn" onclick="randomStyle()">🎲 랜덤 적용</button>
+        <button class="sec" onclick="restoreStyle()">↩️ 랜덤 되돌리기</button>
+        <button class="red" onclick="resetStyle()">🔄 초기화</button>
+      </div>
+      <label style="color:#666;font-size:10px">초기화: 처음 기본값으로 / 되돌리기: 랜덤 누르기 전으로</label>
+    </div>
+
+    <div class="ph" onclick="tg(this)">🟢 크로마키 배경 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="sr">
+        <div class="sw on" style="background:#00ff00" onclick="setBg('#00ff00',this)"></div>
+        <div class="sw" style="background:#00b140" onclick="setBg('#00b140',this)"></div>
+        <div class="sw" style="background:#0000ff" onclick="setBg('#0000ff',this)"></div>
+        <div class="sw" style="background:#ff00ff" onclick="setBg('#ff00ff',this)"></div>
+        <div class="sw" style="background:#111;border:1px solid #555" onclick="setBg('#111111',this)"></div>
+        <input type="color" id="bgc" value="#00ff00" oninput="setBg(this.value,null)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ANIM -->
+  <div id="tab-anim" style="display:none">
+    <div class="ph" onclick="tg(this)">🌊 스크롤 속도 <span class="arr">▾</span></div>
+    <div class="psec">
+      <label style="color:#aaa;font-size:10px">클릭 = ON / 다시 클릭 = OFF(정지)</label>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button class="ab" id="spd-veryslow" onclick="setSpeed('veryslow')">🐌 매우 천천히 (120초)</button>
+        <button class="ab" id="spd-slow" onclick="setSpeed('slow')">🚶 천천히 (80초)</button>
+        <button class="ab on" id="spd-normal" onclick="setSpeed('normal')">🚴 보통 (50초)</button>
+        <button class="ab" id="spd-fast" onclick="setSpeed('fast')">🏃 조금 빠르게 (30초)</button>
+        <button class="ab" id="spd-veryfast" onclick="setSpeed('veryfast')">⚡ 빠르게 (15초)</button>
+        <button class="ab red" id="spd-stop" onclick="setSpeed('stop')">⛔ 정지</button>
+      </div>
+      <div style="font-size:10px;color:#666;margin-top:4px">현재: <span id="spd-label">보통 (50초)</span></div>
+    </div>
+
+    <div class="ph" onclick="tg(this)">✨ 추가 효과 ON/OFF <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="ag">
+        <button class="ab" id="fx-rainbow" onclick="toggleFx('rainbow')">🌈 레인보우</button>
+        <button class="ab" id="fx-neon" onclick="toggleFx('neon')">💡 네온펄스</button>
+        <button class="ab" id="fx-bounce" onclick="toggleFx('bounce')">🏀 바운스</button>
+        <button class="ab" id="fx-wave" onclick="toggleFx('wave')">🌊 웨이브</button>
+        <button class="ab" id="fx-shake" onclick="toggleFx('shake')">📳 쉐이크</button>
+        <button class="ab" id="fx-glitch" onclick="toggleFx('glitch')">⚡ 글리치</button>
+        <button class="ab" id="fx-zoom" onclick="toggleFx('zoom')">🔍 줌</button>
+        <button class="ab" id="fx-spin" onclick="toggleFx('spin')">🌀 3D회전</button>
+        <button class="ab red" onclick="clearFx()">✕ 전체 OFF</button>
+      </div>
+      <div class="rr" style="margin-top:4px">
+        <label>효과 속도</label>
+        <input type="range" id="fxspd" min="0.3" max="5" step="0.1" value="1.5" oninput="applyFx();syncRV('fxspd','s')">
+        <span class="rv" id="fxspdV">1.5s</span>
+        <input type="number" id="fxspdN" value="1.5" step="0.1" oninput="syncNR('fxspd',this)">
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div id="tab-layout" style="display:none">
+    <div class="ph" onclick="tg(this)">📐 위치 <span class="arr">▾</span></div>
+    <div class="psec">
+      <label>가로</label>
+      <div class="pg">
+        <div class="pb on" id="hp-left" onclick="setHP('left')">◀ 왼쪽</div>
+        <div class="pb" id="hp-center" onclick="setHP('center')">가운데</div>
+        <div class="pb" id="hp-right" onclick="setHP('right')">오른쪽 ▶</div>
+      </div>
+      <label style="margin-top:4px">세로</label>
+      <div class="pg">
+        <div class="pb" id="vp-top" onclick="setVP('top')">▲ 위</div>
+        <div class="pb on" id="vp-mid" onclick="setVP('mid')">가운데</div>
+        <div class="pb" id="vp-bot" onclick="setVP('bot')">▼ 아래</div>
+      </div>
+      <div class="rr" style="margin-top:4px"><label>가로 여백</label><input type="range" id="ox" min="0" max="600" step="1" value="24" oninput="updLayout();syncRV('ox','px')"><span class="rv" id="oxV">24px</span><input type="number" id="oxN" value="24" step="1" oninput="syncNR('ox',this)"></div>
+      <div class="rr"><label>세로 여백</label><input type="range" id="oy" min="0" max="400" step="1" value="24" oninput="updLayout();syncRV('oy','px')"><span class="rv" id="oyV">24px</span><input type="number" id="oyN" value="24" step="1" oninput="syncNR('oy',this)"></div>
+      <div class="rr"><label>클립 높이</label><input type="range" id="clipH" min="100" max="2000" step="1" value="1000" oninput="updLayout();syncRV('clipH','px')"><span class="rv" id="clipHV">1000px</span><input type="number" id="clipHN" value="1000" step="1" oninput="syncNR('clipH',this)"></div>
+    </div>
+    <div class="ph" onclick="tg(this)">📏 간격 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="rr"><label>항목 간격</label><input type="range" id="ig" min="0" max="40" step="1" value="5" oninput="fullRender();syncRV('ig','px')"><span class="rv" id="igV">5px</span><input type="number" id="igN" value="5" step="1" oninput="syncNR('ig',this)"></div>
+      <div class="rr"><label>번호-텍스트</label><input type="range" id="inn" min="0" max="40" step="1" value="10" oninput="fullRender();syncRV('inn','px')"><span class="rv" id="innV">10px</span><input type="number" id="innN" value="10" step="1" oninput="syncNR('inn',this)"></div>
+      <div class="rr"><label>공백 크기</label><input type="range" id="spch" min="4" max="100" step="1" value="20" oninput="fullRender();syncRV('spch','px')"><span class="rv" id="spchV">20px</span><input type="number" id="spchN" value="20" step="1" oninput="syncNR('spch',this)"></div>
+    </div>
+    <div class="ph" onclick="tg(this)">🖥️ 표시 <span class="arr">▾</span></div>
+    <div class="psec">
+      <div class="row">
+        <input type="checkbox" id="shnum" checked onchange="fullRender()"><label>번호</label>
+        <input type="checkbox" id="shbdg" checked onchange="fullRender()"><label>뱃지</label>
+      </div>
+      <div class="brow" style="margin-top:4px">
+        <button class="grn" onclick="saveAndHide()">💾 저장 후 숨기기</button>
+        <button class="sec" onclick="hidePanel()">🎬 패널 숨기기</button>
+        <button class="orn" onclick="toggleFS()">⛶ 전체화면</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUPS -->
+<div class="popup" id="icp">
+  <div style="font-size:11px;font-weight:700;color:#c084fc">항목 개별 색상</div>
+  <div class="row"><label style="min-width:55px">번호색</label><input type="color" id="icp-nc" value="#FF4444" oninput="updIC()"></div>
+  <div class="row"><label style="min-width:55px">텍스트색</label><input type="color" id="icp-tc" value="#FFFFFF" oninput="updIC()"></div>
+  <div class="row"><input type="checkbox" id="icp-use" onchange="updIC()"><label>개별 색상 사용</label></div>
+  <button class="sec" style="font-size:10px" onclick="closePopup('icp')">닫기</button>
+</div>
+<div class="popup" id="hcp">
+  <div style="font-size:11px;font-weight:700;color:#c084fc">제목 색상</div>
+  <div class="row"><label style="min-width:40px">색상</label><input type="color" id="hcp-c" value="#FFD700" oninput="updHC()"></div>
+  <div class="sr" id="hcp-sw"></div>
+  <div class="row"><input type="checkbox" id="hcp-use" onchange="updHC()"><label>개별 색상 사용</label></div>
+  <button class="sec" style="font-size:10px" onclick="closePopup('hcp')">닫기</button>
+</div>
+<div class="popup" id="emp" style="min-width:250px">
+  <div style="font-size:11px;font-weight:700;color:#c084fc">항목 이모지</div>
+  <input type="text" id="emp-val" placeholder="이모지 입력" style="font-size:16px;text-align:center" oninput="updEMP()">
+  <div style="display:flex;flex-wrap:wrap;gap:3px;max-height:100px;overflow-y:auto" id="emp-q"></div>
+  <div class="row"><input type="checkbox" id="emp-use" onchange="updEMP()"><label>이 이모지 사용 (기본 이모지 무시)</label></div>
+  <button class="sec" style="font-size:10px" onclick="closePopup('emp')">닫기</button>
+</div>
+
+<!-- PW POPUP -->
+<div id="pw-popup">
+  <div style="background:#1a1a2e;border:1px solid #7c6fff;border-radius:14px;padding:28px 32px;display:flex;flex-direction:column;gap:14px;align-items:center;min-width:280px;box-shadow:0 8px 40px #000c">
+    <div style="font-size:28px">🔒</div>
+    <div style="font-size:15px;font-weight:900;color:#fff;font-family:'Noto Sans KR',sans-serif">패널 비밀번호</div>
+    <input id="pw-input" type="password" placeholder="비밀번호 입력"
+      style="width:100%;background:#0d0d1e;border:1px solid #7c6fff;border-radius:7px;color:#fff;padding:9px 14px;font-size:16px;font-family:'Noto Sans KR',sans-serif;outline:none;text-align:center;letter-spacing:4px"
+      oninput="document.getElementById('pw-err').style.display='none'">
+    <div id="pw-err" style="display:none;color:#ff4466;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif">❌ 비밀번호가 틀렸습니다</div>
+    <div style="display:flex;gap:8px;width:100%">
+      <button onclick="cancelPW()" style="flex:1;background:rgba(255,255,255,.08);border:1px solid #444;color:#aaa;border-radius:7px;padding:9px;cursor:pointer;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif">취소</button>
+      <button onclick="submitPW()" style="flex:2;background:linear-gradient(135deg,#7c6fff,#c084fc);border:none;color:#fff;border-radius:7px;padding:9px;cursor:pointer;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ════════════════════════════════
+// STATE
+// ════════════════════════════════
+let rows = [];
+let hPos = 'left', vPos = 'mid';
+let rafId = null, scrollPos = 0;
+let icpIdx = -1, hcpIdx = -1, empIdx = -1;
+let currentSpd = 'normal';
+let activeFx = new Set();
+let styleBackup = null;
+let panelVis = false;
+
+const PASS = '121314';
+const SAVE_KEY = 'siglist_v9';
+
+const DEFAULT_STYLE = {
+  ff:"'Black Han Sans',sans-serif", fs:'36', fw:'700', ls:'0', lh:'1.3',
+  nc:'#FF4444', tc:'#FFFFFF',
+  nsc:'#000000', nsw:'4', tsc:'#000000', tsw:'3',
+  shon:true, shc:'#000000', shx:'2', shy:'2', shb:'4',
+  neon:false, neonc:'#00FFFF', neons:'20',
+  ibg:false, ibgc:'#000000', ibga:'50', ibgr:'8', ibgp:'8',
+  hnc:'#FFD700', hnsc:'#000000', hnsw:'3',
+  hff:"'Black Han Sans',sans-serif", hfs:'44', hfw:'900', hls:'1',
+  hind:'0', hmt:'8', hmb:'4', halign:'left',
+  bdgsz:'11', defemoji:'💖',
+  ox:'24', oy:'24', clipH:'1000', ig:'5', inn:'10', spch:'20',
+  bg:'#00ff00'
+};
+
+const SPD_MAP = {veryslow:120, slow:80, normal:50, fast:30, veryfast:15};
+const SPD_LABEL = {veryslow:'매우 천천히 (120초)', slow:'천천히 (80초)', normal:'보통 (50초)', fast:'조금 빠르게 (30초)', veryfast:'빠르게 (15초)', stop:'정지'};
+
+const EMOJIS = ['💖','💧','🎵','🎤','⭐','🌟','🔥','💎','👑','💜','❤️','💛','💚','💙','🩷','🎶','🎸','🌸','🌈','✨','💫','🦋','🌙','🎯','💯','🏆','🎁','🍀','🌺','🌹','🫶','🙌','💪','🦄','🌊','⚡','🔮','🪄','🎀','🎊','🎉','💌','💃','🤩','😍','🍒','🫦','💋','🍑','🐾','🥊','🎪','🔑','🎭','🎲','🎮'];
+const NC_SW = ['#FF4444','#FF8C00','#FFD700','#7FFF00','#00FFFF','#DA70D6','#FF69B4','#FFFFFF','#000000'];
+const TC_SW = ['#FFFFFF','#FFD700','#FF8C00','#FF69B4','#7FFF00','#00FFFF','#EE82EE','#FF4444'];
+const HCP_SW = ['#FFD700','#FF69B4','#00FFFF','#7FFF00','#CC44FF','#FF4444','#00FF80','#FF8C00','#ffffff'];
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+window.addEventListener('load', () => {
+  buildSwatches();
+  buildEQ();
+  buildEMPQ();
+  if (!loadSavedSilent()) {
+    rows = [
+    {t:'header',txt:'[ 미션 ]',c:{}},
+    {t:'item',num:'10',txt:'팬가입',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'15',txt:'뿅망치',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'25',txt:'혀(5초)',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'19',txt:'심쿵',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'29',txt:'엉쿵',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'30',txt:'아봉(20초)',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'77',txt:'홀짝주사위',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'63',txt:'캠리액션',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'163',txt:'노래한곡',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'263',txt:'댄스한곡(선택) ▸!댄스',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'50',txt:'랜덤시그',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'60',txt:'랜덤운동',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'70',txt:'랜덤섹시',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'555',txt:'방송 30분연장',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'▸55',txt:'연장룰렛',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'666',txt:'방송 30분단축',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'▸66',txt:'단축룰렛',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'777',txt:'의첸',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'1414',txt:'식사식사',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'1415',txt:'식사시로',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'12463',txt:'휴방권',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'20982',txt:'방종하자',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'',txt:'💖!명령어 미션 더 있어요!💖',badge:'',emoji:'',c:{}},
+    {t:'spacer',c:{}},
+    {t:'item',num:'',txt:'💖타비발언 1004💖',badge:'',emoji:'',c:{}},
+    {t:'spacer',c:{}},
+    {t:'header',txt:'[ 시그 ]',c:{}},
+    {t:'item',num:'32',txt:'피카츄',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'34',txt:'삐끼삐끼',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'35',txt:'이머전시',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'36',txt:'바니바니',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'37',txt:'붐붐',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'41',txt:'죽순',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'42',txt:'포켓몬',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'43',txt:'이안챌린지',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'45',txt:'우치다',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'46',txt:'캐치캐치',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'47',txt:'홀리몰리',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'48',txt:'외모체크',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'51',txt:'트월킹덕',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'53',txt:'라부부',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'54',txt:'새천년건강체조',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'56',txt:'역도',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'57',txt:'개로개로',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'58',txt:'야호~',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'59',txt:'3.2.1go!',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'61',txt:'뾱뾱이',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'62',txt:'뿌에',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'64',txt:'신나게조려보자',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'65',txt:'앙카',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'67',txt:'똑똑똑',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'71',txt:'도우인',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'72',txt:'버터플라이',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'73',txt:'키딩',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'74',txt:'색소폰매직',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'75',txt:'핑크레이디',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'76',txt:'비포에프터',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'81',txt:'무아',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'82',txt:'라라리라라',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'83',txt:'쉐이크러브',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'84',txt:'도마댄스',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'85',txt:'일분일초',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'86',txt:'나랑사귈래',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'91',txt:'이프유럽미',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'92',txt:'베이프',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'93',txt:'마그네틱',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'94',txt:'마보이',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'95',txt:'심뽀찜뽀',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'96',txt:'왜요왜요',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'97',txt:'끈적끈적',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'101',txt:'see바레쓰고',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'102',txt:'빅가이',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'103',txt:'붕가댄스',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'104',txt:'립앤힙',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'105',txt:'스키',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'106',txt:'홀드업',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'111',txt:'콩나물',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'112',txt:'몸매',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'113',txt:'LOW',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'114',txt:'세비지러브',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'115',txt:'오빠하앙',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'116',txt:'텔미',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'121',txt:'바우치',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'122',txt:'모또모또',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'123',txt:'슴만두',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'124',txt:'슴모찌',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'125',txt:'개엄령',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'126',txt:'트럼펫스타',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'127',txt:'터미널',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'128',txt:'뒷앙카',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'131',txt:'엉큰녀',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'132',txt:'알려줄게',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'133',txt:'아헤가오',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'134',txt:'EDM',badge:'',emoji:'💖',c:{}},
+    {t:'item',num:'135',txt:'센세',badge:'',emoji:'💖',c:{}},
+    {t:'spacer',c:{}},
+    {t:'header',txt:'[ 운동 ]',c:{}},
+    {t:'item',num:'20',txt:'벽찍',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'26',txt:'스쿼트',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'40',txt:'뒷쿼트',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'52',txt:'오리벽찍',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'37',txt:'붐붐',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'41',txt:'죽순',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'53',txt:'라부부',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'54',txt:'새천년건강체조',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'56',txt:'역도',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'57',txt:'개로개로',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'62',txt:'뿌에',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'65',txt:'앙카',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'103',txt:'붕가댄스',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'105',txt:'스키',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'111',txt:'콩나물',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'222',txt:'패딩10분',badge:'',emoji:'💧',c:{}},
+    {t:'item',num:'1818',txt:'108배 (m4)',badge:'',emoji:'💧',c:{}}
+  ].map(r=>({...r,c:r.c||{},hc:r.hc||{},ec:r.ec||{}}));
+    document.getElementById('defemoji').value = '💖';
+    renderEditor();
+  }
+  fullRender();
+  setSpeedBtn(currentSpd);
+});
+
+// ════════════════════════════════
+// APPLY COLOR (단색만)
+// ════════════════════════════════
+function applyColor(el, solid, strokeC, strokeW, shadow) {
+  el.style.display = 'inline-block';
+  el.style.textShadow = shadow || '';
+  el.style.webkitTextStroke = strokeW > 0 ? `${strokeW}px ${strokeC}` : '';
+  el.style.paintOrder = 'stroke fill';
+  el.style.backgroundImage = 'none';
+  el.style.webkitBackgroundClip = 'unset';
+  el.style.backgroundClip = 'unset';
+  el.style.webkitTextFillColor = solid;
+  el.style.color = solid;
+}
+
+// ════════════════════════════════
+// FULL RENDER
+// ════════════════════════════════
+function fullRender() {
+  killFlow();
+
+  const ff = G('ff'), fs = +G('fs'), fw = +G('fw'), ls = +G('ls'), lh = +G('lh');
+  const hdrOwn = ck('hdr-own');
+  const hff = hdrOwn ? G('hff') : ff;
+  const hfs = hdrOwn ? +G('hfs') : fs;
+  const hfw = hdrOwn ? +G('hfw') : fw;
+  const hls = hdrOwn ? +G('hls') : ls;
+  const hItalic = hdrOwn && ck('hck-i');
+  const hUc = hdrOwn && ck('hck-uc');
+  const hInd = hdrOwn ? +G('hind') : 0;
+  const hmt = hdrOwn ? +G('hmt') : 4;
+  const hmb = hdrOwn ? +G('hmb') : 4;
+  const halign = hdrOwn ? G('halign') : 'left';
+  const hnc = G('hnc'), hnsc = G('hnsc'), hnsw = +G('hnsw');
+  const nc = G('nc'), tc = G('tc');
+  const nsc = G('nsc'), nsw = +G('nsw'), tsc = G('tsc'), tsw = +G('tsw');
+  const shon = ck('shon'), shc = G('shc'), shx = +G('shx'), shy = +G('shy'), shb = +G('shb');
+  const neon = ck('neon'), neonc = G('neonc'), neons = +G('neons');
+  const ibg = ck('ibg'), ibgc = G('ibgc'), ibga = +G('ibga'), ibgr = +G('ibgr'), ibgp = +G('ibgp');
+  const shnum = ck('shnum'), shbdg = ck('shbdg');
+  const ig = +G('ig'), inn = +G('inn'), spch = +G('spch');
+  const italic = ck('ck-i'), ul = ck('ck-u'), st = ck('ck-s'), uc = ck('ck-uc');
+  const defemoji = G('defemoji'), badgesz = +G('bdgsz');
+  const btext = {hot:G('bt-hot'),new:G('bt-new'),pick:G('bt-pick'),up:G('bt-up'),done:G('bt-done')};
+  const epos = document.querySelector('input[name="epos"]:checked')?.value || 'after-num';
+
+  // font preview
+  document.getElementById('fprev').style.fontFamily = ff;
+
+  // shadow
+  const shads = [];
+  if (shon) shads.push(`${shx}px ${shy}px ${shb}px ${shc}`);
+  if (neon) shads.push(`0 0 ${neons/2}px ${neonc}`, `0 0 ${neons}px ${neonc}`, `0 0 ${neons*2}px ${neonc}`);
+  const shadow = shads.join(', ');
+
+  function h2r(hex, a) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a/100})`;
+  }
+
+  const track = document.getElementById('track');
+  track.innerHTML = '';
+  track.style.cssText = `display:flex;flex-direction:column;position:relative;font-family:${ff};font-size:${fs}px;font-weight:${fw};letter-spacing:${ls}px;line-height:${lh};gap:${ig}px;`;
+
+  rows.forEach(r => {
+    if (r.t === 'spacer') {
+      const sp = document.createElement('div');
+      sp.style.cssText = `height:${spch}px;flex-shrink:0;display:block`;
+      track.appendChild(sp);
+      return;
+    }
+    if (r.t === 'header') {
+      const useHC = !!r.hc?.use;
+      const hColor = useHC ? (r.hc.c || '#FFD700') : hnc;
+      const hd = document.createElement('div');
+      hd.style.cssText = `display:block;white-space:nowrap;flex-shrink:0;font-family:${hff};font-size:${hfs}px;font-weight:${hfw};letter-spacing:${hls}px;font-style:${hItalic?'italic':'normal'};text-transform:${hUc?'uppercase':'none'};text-align:${halign};margin-left:${hInd}px;margin-top:${hmt}px;margin-bottom:${hmb}px;`;
+      hd.textContent = r.txt;
+      applyColor(hd, hColor, hnsc, hnsw, shadow);
+      track.appendChild(hd);
+      return;
+    }
+    // item
+    const div = document.createElement('div');
+    div.className = 'sig-item' + (r.done ? ' done' : '');
+    div.style.cssText = `display:flex;align-items:center;white-space:nowrap;flex-shrink:0;gap:${inn}px;font-style:${italic?'italic':'normal'};text-decoration:${[ul?'underline':'',st?'line-through':''].filter(Boolean).join(' ')||'none'};text-transform:${uc?'uppercase':'none'};cursor:pointer;pointer-events:auto;`;
+    if (ibg) div.style.cssText += `background:${h2r(ibgc,ibga)};border-radius:${ibgr}px;padding:${ibgp/2}px ${ibgp}px;`;
+    div.addEventListener('click', () => {
+      r.done = !r.done;
+      div.classList.toggle('done', r.done);
+      const te = div.querySelector('.item-txt');
+      if (te) te.style.textDecoration = r.done ? 'line-through' : (ul ? 'underline' : 'none');
+    });
+
+    const useIC = !!r.c?.use;
+    const iNC = useIC ? (r.c.nc || nc) : nc;
+    const iTC = useIC ? (r.c.tc || tc) : tc;
+    const useEC = !!r.ec?.use;
+    const emoji = useEC ? (r.ec.e || '') : defemoji;
+
+    function mkE() {
+      const s = document.createElement('span');
+      s.style.cssText = `display:inline-block;font-size:${fs*0.9}px;flex-shrink:0;`;
+      s.textContent = emoji;
+      return s;
+    }
+
+    if (emoji && epos === 'before-num') div.appendChild(mkE());
+    if (shnum && r.num) {
+      const ne = document.createElement('span');
+      ne.style.cssText = `display:inline-block;text-align:right;min-width:1.8em;flex-shrink:0;`;
+      ne.textContent = r.num;
+      applyColor(ne, iNC, nsc, nsw, shadow);
+      div.appendChild(ne);
+    }
+    if (emoji && epos === 'after-num') div.appendChild(mkE());
+    if (emoji && epos === 'before-txt') div.appendChild(mkE());
+
+    const te = document.createElement('span');
+    te.className = 'item-txt';
+    te.style.cssText = `display:inline-block;${r.done?'text-decoration:line-through;':''}`;
+    te.textContent = r.txt;
+    applyColor(te, iTC, tsc, tsw, shadow);
+    div.appendChild(te);
+
+    if (emoji && epos === 'after-txt') div.appendChild(mkE());
+
+    if (shbdg && r.badge) {
+      const bk = r.badge.toLowerCase();
+      const b = document.createElement('span');
+      b.className = `badge badge-${bk}`;
+      b.style.fontSize = badgesz + 'px';
+      b.textContent = btext[bk] || r.badge;
+      div.appendChild(b);
+    }
+    track.appendChild(div);
+  });
+
+  updLayout();
+  // 렌더 완료 후 스크롤 시작
+  requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => startFlow())));
+  applyFx();
+}
+
+// ════════════════════════════════
+// SCROLL
+// ════════════════════════════════
+function killFlow() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  scrollPos = 0;
+  const clip = document.getElementById('clip');
+  const track = document.getElementById('track');
+  if (clip) {
+    clip.querySelectorAll('.clone').forEach(e => e.remove());
+    clip.style.position = 'relative';
+    clip.style.overflow = 'hidden';
+  }
+  if (track) {
+    track.style.transform = '';
+    track.style.transition = '';
+    track.style.flexDirection = 'column';
+    track.style.whiteSpace = '';
+  }
+}
+
+function startFlow() {
+  if (currentSpd === 'stop') return;
+  const track = document.getElementById('track');
+  const clip = document.getElementById('clip');
+  if (!track || !clip) return;
+  const spdSec = SPD_MAP[currentSpd] || 50;
+
+  // overflow 임시 해제해서 실제 높이 측정
+  clip.style.overflow = 'visible';
+
+  requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const trackH = track.offsetHeight;
+    clip.style.overflow = 'hidden';
+    if (trackH < 10) return;
+
+    // 클론 추가
+    const clone = track.cloneNode(true);
+    clone.classList.add('clone');
+    clone.style.cssText = `position:absolute;top:${trackH}px;left:0;`;
+    clip.appendChild(clone);
+    clip.style.position = 'relative';
+
+    const pxPerMs = trackH / (spdSec * 1000);
+    scrollPos = 0;
+    let lastTs = null;
+
+    function step(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(ts - lastTs, 100);
+      lastTs = ts;
+      scrollPos += pxPerMs * dt;
+      if (scrollPos >= trackH) scrollPos -= trackH;
+      track.style.transform = `translateY(-${scrollPos}px)`;
+      clone.style.transform = `translateY(-${scrollPos}px)`;
+      rafId = requestAnimationFrame(step);
+    }
+    rafId = requestAnimationFrame(step);
+  })));
+}
+
+function setSpeed(spd) {
+  if (currentSpd === spd && spd !== 'stop') {
+    // 같은 버튼 다시 → 정지
+    currentSpd = 'stop';
+    setSpeedBtn('stop');
+    killFlow();
+    return;
+  }
+  currentSpd = spd;
+  setSpeedBtn(spd);
+  killFlow();
+  if (spd !== 'stop') {
+    requestAnimationFrame(() => requestAnimationFrame(() => startFlow()));
+  }
+}
+
+function setSpeedBtn(spd) {
+  document.querySelectorAll('[id^="spd-"]').forEach(b => b.classList.remove('on'));
+  const btn = document.getElementById('spd-' + spd);
+  if (btn) btn.classList.add('on');
+  const lbl = document.getElementById('spd-label');
+  if (lbl) lbl.textContent = SPD_LABEL[spd] || spd;
+}
+
+// ════════════════════════════════
+// FX
+// ════════════════════════════════
+function toggleFx(name) {
+  if (activeFx.has(name)) { activeFx.delete(name); document.getElementById('fx-'+name).classList.remove('on'); }
+  else { activeFx.add(name); document.getElementById('fx-'+name).classList.add('on'); }
+  applyFx();
+}
+function clearFx() {
+  activeFx.clear();
+  document.querySelectorAll('[id^="fx-"]').forEach(b => b.classList.remove('on'));
+  applyFx();
+}
+function applyFx() {
+  const spd = +G('fxspd');
+  const map = {
+    rainbow:`fxRainbow ${spd*3}s linear infinite`,
+    neon:`fxNeon ${spd}s ease-in-out infinite`,
+    bounce:`fxBounce ${spd*0.4}s ease-in-out infinite`,
+    wave:`fxWave ${spd*0.5}s ease-in-out infinite`,
+    shake:`fxShake ${spd*0.3}s ease-in-out infinite`,
+    glitch:`fxGlitch ${spd*0.2}s ease-in-out infinite`,
+    zoom:`fxZoom ${spd}s ease-in-out infinite`,
+    spin:`fxSpin ${spd*2}s linear infinite`
+  };
+  const anim = [...activeFx].map(f => map[f] || '').filter(Boolean).join(',');
+  document.querySelectorAll('#track .sig-item').forEach((el, i) => {
+    el.style.animation = anim || '';
+    if (anim) el.style.animationDelay = (i * 0.07) + 's';
+  });
+}
+
+// ════════════════════════════════
+// PARSE
+// ════════════════════════════════
+function parseRaw() {
+  const raw = document.getElementById('raw').value.trim();
+  if (!raw) return;
+  rows = [];
+  raw.split('\n').forEach(line => {
+    if (!line.trim()) { rows.push({t:'spacer',c:{},hc:{},ec:{}}); return; }
+    const hm = line.match(/^\s*[\[【「]\s*(.+?)\s*[\]】」]\s*$/);
+    if (hm) { rows.push({t:'header',txt:'[ '+hm[1]+' ]',c:{},hc:{},ec:{}}); return; }
+    let s = line.replace(/^[\s│|｜▸]+/, '').trim();
+    const em = s.match(/^([\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+)/u);
+    let emoji = '';
+    if (em) { emoji = em[1]; s = s.slice(emoji.length).trim(); }
+    const nm = s.match(/^(\d+)\s*(.*)/);
+    let num = '', txt = '';
+    if (nm) { num = nm[1]; txt = nm[2].replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]+$/gu, '').trim(); }
+    else { txt = s.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]+$/gu, '').trim(); }
+    if (txt || num) rows.push({t:'item',num,txt,badge:'',emoji,c:{},hc:{},ec:emoji?{use:true,e:emoji}:{}});
+  });
+  renderEditor(); fullRender();
+  document.getElementById('raw').value = '';
+}
+
+// ════════════════════════════════
+// EDITOR
+// ════════════════════════════════
+function renderEditor() {
+  const tb = document.getElementById('ebody'); tb.innerHTML = '';
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr'); tr.dataset.i = i;
+    if (r.t === 'spacer') {
+      tr.innerHTML = `<td><span class="dh" draggable="true">☰</span></td><td colspan="5" style="color:#555;font-size:10px;padding:3px 6px">— 공백 —</td><td></td><td><button class="dbtn" onclick="delRow(${i})">✕</button></td>`;
+    } else if (r.t === 'header') {
+      const hcc = r.hc?.use ? (r.hc.c || '#c084fc') : '#c084fc';
+      tr.innerHTML = `<td><span class="dh" draggable="true">☰</span></td><td style="font-size:9px;color:#c084fc;text-align:center">제목</td><td colspan="3"><input type="text" value="${esc(r.txt)}" style="width:100%" onchange="rows[${i}].txt=this.value;fullRender()"></td><td><span class="cdot" style="background:${hcc}" onclick="openHCP(${i},this)"></span></td><td></td><td><button class="dbtn" onclick="delRow(${i})">✕</button></td>`;
+    } else {
+      const cc = r.c?.use ? (r.c.nc || '#ff4444') : '#555';
+      const ec = r.ec?.use ? (r.ec.e || '?') : '·';
+      const ecStyle = r.ec?.use ? 'color:#fff;background:#7c6fff;border-radius:3px;padding:1px 3px;' : 'color:#555;';
+      const bv = r.badge || '';
+      tr.innerHTML = `<td><span class="dh" draggable="true">☰</span></td>
+      <td style="font-size:9px;color:#888;text-align:center">항목</td>
+      <td><input type="text" value="${esc(r.num)}" style="width:34px;background:transparent;border:none;border-bottom:1px solid #333;color:var(--tx);font-size:11px;padding:2px" onchange="rows[${i}].num=this.value;fullRender()"></td>
+      <td><input type="text" value="${esc(r.txt)}" style="width:105px;background:transparent;border:none;border-bottom:1px solid #333;color:var(--tx);font-size:11px;padding:2px" onchange="rows[${i}].txt=this.value;fullRender()"></td>
+      <td style="text-align:center"><span style="cursor:pointer;font-size:14px;${ecStyle}" onclick="openEMP(${i},this)">${ec}</span></td>
+      <td><select style="background:#0d0d1e;border:1px solid #333;color:#ddd;font-size:10px;border-radius:3px;padding:1px 2px;width:100%" onchange="rows[${i}].badge=this.value;fullRender()">
+        <option value="">없음</option>
+        <option value="HOT" ${bv==='HOT'?'selected':''}>HOT</option>
+        <option value="NEW" ${bv==='NEW'?'selected':''}>NEW</option>
+        <option value="PICK" ${bv==='PICK'?'selected':''}>PICK</option>
+        <option value="UP" ${bv==='UP'?'selected':''}>🔞</option>
+        <option value="DONE" ${bv==='DONE'?'selected':''}>DONE</option>
+      </select></td>
+      <td><span class="cdot" style="background:${cc}" onclick="openICP(${i},this)"></span></td>
+      <td><button class="dbtn" onclick="delRow(${i})">✕</button></td>`;
+    }
+    tb.appendChild(tr);
+  });
+  setupDD();
+}
+function addItem() { rows.push({t:'item',num:'',txt:'새 항목',badge:'',emoji:'',c:{},hc:{},ec:{}}); renderEditor(); fullRender(); }
+function addHeader() { rows.push({t:'header',txt:'[ 제목 ]',c:{},hc:{},ec:{}}); renderEditor(); fullRender(); }
+function addSpacer() { rows.push({t:'spacer',c:{},hc:{},ec:{}}); renderEditor(); fullRender(); }
+function delRow(i) { rows.splice(i,1); renderEditor(); fullRender(); }
+function clearAll() { rows = []; renderEditor(); fullRender(); }
+function esc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function setupDD() {
+  const trs = document.querySelectorAll('#ebody tr'); let src = null;
+  trs.forEach(tr => {
+    const dh = tr.querySelector('.dh');
+    if (dh) dh.addEventListener('mousedown', () => { tr.draggable = true; });
+    tr.addEventListener('dragstart', e => { src = tr; e.dataTransfer.effectAllowed = 'move'; });
+    tr.addEventListener('dragover', e => e.preventDefault());
+    tr.addEventListener('drop', e => { e.preventDefault(); if (src && src !== tr) { const fi=+src.dataset.i, ti=+tr.dataset.i; const[m]=rows.splice(fi,1); rows.splice(ti,0,m); renderEditor(); fullRender(); } });
+    tr.addEventListener('dragend', () => { tr.draggable = false; });
+  });
+}
+
+// ════════════════════════════════
+// POPUPS
+// ════════════════════════════════
+function openPopup(id, el) {
+  closeAllPopups();
+  const popup = document.getElementById(id);
+  const rc = el.getBoundingClientRect();
+  popup.style.left = Math.max(4, rc.left - 220) + 'px';
+  popup.style.top = (rc.bottom + 4) + 'px';
+  popup.classList.add('open');
+}
+function closePopup(id) { document.getElementById(id).classList.remove('open'); }
+function closeAllPopups() { document.querySelectorAll('.popup').forEach(p => p.classList.remove('open')); }
+
+function openICP(i, el) {
+  icpIdx = i; const r = rows[i];
+  document.getElementById('icp-nc').value = r.c?.nc || '#FF4444';
+  document.getElementById('icp-tc').value = r.c?.tc || '#FFFFFF';
+  document.getElementById('icp-use').checked = !!r.c?.use;
+  openPopup('icp', el);
+}
+function updIC() {
+  if (icpIdx < 0) return;
+  rows[icpIdx].c = {nc:document.getElementById('icp-nc').value, tc:document.getElementById('icp-tc').value, use:document.getElementById('icp-use').checked};
+  renderEditor(); fullRender();
+}
+
+function openHCP(i, el) {
+  hcpIdx = i; const r = rows[i];
+  document.getElementById('hcp-c').value = r.hc?.c || '#FFD700';
+  document.getElementById('hcp-use').checked = !!r.hc?.use;
+  openPopup('hcp', el);
+}
+function updHC() {
+  if (hcpIdx < 0) return;
+  rows[hcpIdx].hc = {c:document.getElementById('hcp-c').value, use:document.getElementById('hcp-use').checked};
+  renderEditor(); fullRender();
+}
+
+function openEMP(i, el) {
+  empIdx = i; const r = rows[i];
+  document.getElementById('emp-val').value = r.ec?.e || '';
+  document.getElementById('emp-use').checked = !!r.ec?.use;
+  openPopup('emp', el);
+}
+function updEMP() {
+  if (empIdx < 0) return;
+  rows[empIdx].ec = {e:document.getElementById('emp-val').value, use:document.getElementById('emp-use').checked};
+  renderEditor(); fullRender();
+}
+
+// ════════════════════════════════
+// STYLE RANDOM / RESTORE / RESET
+// ════════════════════════════════
+function captureStyle() {
+  return {
+    ff:G('ff'), fs:G('fs'), fw:G('fw'), ls:G('ls'), lh:G('lh'),
+    nc:G('nc'), tc:G('tc'),
+    nsc:G('nsc'), nsw:G('nsw'), tsc:G('tsc'), tsw:G('tsw'),
+    shon:ck('shon'), shc:G('shc'), shx:G('shx'), shy:G('shy'), shb:G('shb'),
+    neon:ck('neon'), neonc:G('neonc'), neons:G('neons'),
+    ibg:ck('ibg'), ibgc:G('ibgc'), ibga:G('ibga'), ibgr:G('ibgr'), ibgp:G('ibgp'),
+    hnc:G('hnc'), hnsc:G('hnsc'), hnsw:G('hnsw'),
+    hff:G('hff'), hfs:G('hfs'), hfw:G('hfw'), hls:G('hls'),
+    hind:G('hind'), hmt:G('hmt'), hmb:G('hmb'), halign:G('halign'),
+    bdgsz:G('bdgsz'), defemoji:G('defemoji'),
+    bg:document.body.style.background || '#00ff00'
+  };
+}
+
+function applyStyleObj(d) {
+  if (!d) return;
+  const sv = (id, v) => { const e = document.getElementById(id); if (e && v !== undefined) e.value = v; };
+  const sc2 = (id, v) => { const e = document.getElementById(id); if (e && v !== undefined) e.checked = !!v; };
+  sv('ff',d.ff); sv('fs',d.fs); sv('fw',d.fw); sv('ls',d.ls); sv('lh',d.lh);
+  sv('nc',d.nc); sv('tc',d.tc);
+  sv('nsc',d.nsc); sv('nsw',d.nsw); sv('tsc',d.tsc); sv('tsw',d.tsw);
+  sc2('shon',d.shon); sv('shc',d.shc); sv('shx',d.shx); sv('shy',d.shy); sv('shb',d.shb);
+  sc2('neon',d.neon); sv('neonc',d.neonc); sv('neons',d.neons);
+  sc2('ibg',d.ibg); sv('ibgc',d.ibgc); sv('ibga',d.ibga); sv('ibgr',d.ibgr); sv('ibgp',d.ibgp);
+  sv('hnc',d.hnc); sv('hnsc',d.hnsc); sv('hnsw',d.hnsw);
+  sv('hff',d.hff); sv('hfs',d.hfs); sv('hfw',d.hfw); sv('hls',d.hls);
+  sv('hind',d.hind); sv('hmt',d.hmt); sv('hmb',d.hmb); sv('halign',d.halign);
+  sv('bdgsz',d.bdgsz); sv('defemoji',d.defemoji);
+  if (d.bg) { document.body.style.background = d.bg; sv('bgc', d.bg); }
+  // sync RV
+  ['fs','fw','ls','lh','nsw','tsw','hnsw','hfs','hfw','hls','hind','hmt','hmb','shx','shy','shb','neons','ibga','ibgr','ibgp','bdgsz'].forEach(id => {
+    const r = document.getElementById(id); const vEl = document.getElementById(id+'V'); const nEl = document.getElementById(id+'N');
+    if (r && vEl) { const sfx = vEl.textContent.replace(/[0-9.\-]/g,''); vEl.textContent = r.value + sfx; }
+    if (r && nEl) nEl.value = r.value;
+  });
+  fullRender();
+}
+
+function randomStyle() {
+  styleBackup = captureStyle();
+  const opts = document.getElementById('ff').options;
+  document.getElementById('ff').selectedIndex = Math.floor(Math.random() * opts.length);
+  const rc = () => '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6,'0');
+  document.getElementById('nc').value = rc();
+  document.getElementById('tc').value = rc();
+  document.getElementById('hnc').value = rc();
+  const sizes = ['24','28','32','36','40','44','48','52'];
+  document.getElementById('fs').value = sizes[Math.floor(Math.random()*sizes.length)];
+  document.getElementById('fw').value = ['400','700','900'][Math.floor(Math.random()*3)];
+  document.getElementById('defemoji').value = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  // sync RV for fs, fw
+  syncRV('fs','px'); syncRV('fw','');
+  fullRender();
+}
+
+function restoreStyle() {
+  if (!styleBackup) { alert('랜덤 적용 전 상태가 없어요!'); return; }
+  applyStyleObj(styleBackup);
+}
+
+function resetStyle() {
+  if (!confirm('처음 기본값으로 초기화할까요?')) return;
+  applyStyleObj(DEFAULT_STYLE);
+}
+
+// ════════════════════════════════
+// SAVE / LOAD
+// ════════════════════════════════
+function saveNow() {
+  const data = {
+    rows: rows,
+    style: captureStyle(),
+    spd: currentSpd,
+    hPos, vPos,
+    shnum: ck('shnum'), shbdg: ck('shbdg'),
+    ig:G('ig'), inn:G('inn'), spch:G('spch'), clipH:G('clipH'), ox:G('ox'), oy:G('oy'),
+    epos: document.querySelector('input[name="epos"]:checked')?.value || 'after-num',
+    btext: {hot:G('bt-hot'),new:G('bt-new'),pick:G('bt-pick'),up:G('bt-up'),done:G('bt-done')},
+    savedAt: new Date().toLocaleString()
+  };
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  showToast();
+  const info = document.getElementById('save-info');
+  if (info) info.textContent = '저장됨: ' + data.savedAt;
+}
+
+function loadSavedSilent() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (d.rows) rows = d.rows.map(r => ({...r, c:r.c||{}, hc:r.hc||{}, ec:r.ec||{}}));
+    if (d.style) applyStyleObj(d.style);
+    if (d.spd) { currentSpd = d.spd; setSpeedBtn(d.spd); }
+    if (d.hPos) { hPos = d.hPos; document.querySelectorAll('[id^="hp-"]').forEach(b=>b.classList.remove('on')); const b=document.getElementById('hp-'+hPos); if(b)b.classList.add('on'); }
+    if (d.vPos) { vPos = d.vPos; document.querySelectorAll('[id^="vp-"]').forEach(b=>b.classList.remove('on')); const b=document.getElementById('vp-'+vPos); if(b)b.classList.add('on'); }
+    if (d.epos) { const r=document.querySelector(`input[name="epos"][value="${d.epos}"]`); if(r)r.checked=true; }
+    if (d.btext) { ['hot','new','pick','up','done'].forEach(k=>{ const e=document.getElementById('bt-'+k); if(e&&d.btext[k])e.value=d.btext[k]; }); }
+    ['ig','inn','spch','clipH','ox','oy'].forEach(id=>{ const v=d[id]; if(v!==undefined){const e=document.getElementById(id);if(e)e.value=v;syncRV(id,'px');} });
+    if (d.shnum!==undefined){const e=document.getElementById('shnum');if(e)e.checked=d.shnum;}
+    if (d.shbdg!==undefined){const e=document.getElementById('shbdg');if(e)e.checked=d.shbdg;}
+    renderEditor();
+    const info = document.getElementById('save-info');
+    if (info && d.savedAt) info.textContent = '저장됨: ' + d.savedAt;
+    return true;
+  } catch(e) { return false; }
+}
+
+function loadSaved() {
+  if (!loadSavedSilent()) { alert('저장된 데이터가 없습니다.'); return; }
+  fullRender();
+  alert('불러오기 완료!');
+}
+
+function clearSaved() {
+  if (!confirm('저장 데이터를 삭제할까요?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  const info = document.getElementById('save-info');
+  if (info) info.textContent = '저장된 데이터 없음';
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ════════════════════════════════
+// LAYOUT
+// ════════════════════════════════
+function updLayout() {
+  const ov = document.getElementById('overlay');
+  const clip = document.getElementById('clip');
+  const ox = +G('ox'), oy = +G('oy'), clipH = +G('clipH');
+  clip.style.height = clipH + 'px';
+  clip.style.maxHeight = clipH + 'px';
+  clip.style.overflow = 'hidden';
+  const hjust = {left:'flex-start', center:'center', right:'flex-end'}[hPos] || 'flex-start';
+  const valign = {top:'flex-start', mid:'center', bot:'flex-end'}[vPos] || 'center';
+  ov.style.justifyContent = hjust;
+  ov.style.alignItems = valign;
+  ov.style.paddingLeft = hPos === 'left' ? ox + 'px' : '0';
+  ov.style.paddingRight = hPos === 'right' ? ox + 'px' : '0';
+  ov.style.paddingTop = vPos === 'top' ? oy + 'px' : '0';
+  ov.style.paddingBottom = vPos === 'bot' ? oy + 'px' : '0';
+}
+function setHP(p) { hPos=p; document.querySelectorAll('[id^="hp-"]').forEach(b=>b.classList.remove('on')); document.getElementById('hp-'+p).classList.add('on'); updLayout(); }
+function setVP(p) { vPos=p; document.querySelectorAll('[id^="vp-"]').forEach(b=>b.classList.remove('on')); document.getElementById('vp-'+p).classList.add('on'); updLayout(); }
+
+// ════════════════════════════════
+// SWATCHES & EMOJI
+// ════════════════════════════════
+function buildSwatches() {
+  function mk(cid, colors, iid) {
+    const d = document.getElementById(cid); if (!d) return;
+    colors.forEach(c => { const s=document.createElement('div'); s.className='sw'; s.style.background=c; s.onclick=()=>{ document.getElementById(iid).value=c; fullRender(); }; d.appendChild(s); });
+  }
+  mk('nc-sw', NC_SW, 'nc');
+  mk('tc-sw', TC_SW, 'tc');
+  // HCP swatches
+  const hcpSw = document.getElementById('hcp-sw');
+  if (hcpSw) HCP_SW.forEach(c => { const s=document.createElement('div'); s.className='sw'; s.style.background=c; if(c==='#ffffff')s.style.border='1px solid #555'; s.onclick=()=>{ document.getElementById('hcp-c').value=c; updHC(); }; hcpSw.appendChild(s); });
+}
+function buildEQ() {
+  const c = document.getElementById('eqk');
+  EMOJIS.forEach(e => { const b=document.createElement('span'); b.className='eb'; b.textContent=e; b.onclick=()=>{ document.getElementById('defemoji').value=e; fullRender(); }; c.appendChild(b); });
+}
+function buildEMPQ() {
+  const c = document.getElementById('emp-q');
+  EMOJIS.forEach(e => { const b=document.createElement('span'); b.className='eb'; b.textContent=e; b.onclick=()=>{ document.getElementById('emp-val').value=e; document.getElementById('emp-use').checked=true; updEMP(); }; c.appendChild(b); });
+}
+
+// ════════════════════════════════
+// UTILS
+// ════════════════════════════════
+function G(id) { const e=document.getElementById(id); return e?e.value:''; }
+function ck(id) { const e=document.getElementById(id); return e?e.checked:false; }
+function sc(id, v) { const e=document.getElementById(id); if(e){e.value=v;fullRender();} }
+function syncRV(id, sfx='') {
+  const r=document.getElementById(id); if(!r)return;
+  const v=document.getElementById(id+'V'); if(v)v.textContent=r.value+sfx;
+  const n=document.getElementById(id+'N'); if(n)n.value=r.value;
+}
+function syncNR(rid, numEl) {
+  const r=document.getElementById(rid); if(!r)return;
+  const v=parseFloat(numEl.value); if(isNaN(v))return;
+  r.value=v;
+  r.dispatchEvent(new Event('input'));
+}
+function setBg(c, el) {
+  document.body.style.background=c;
+  document.getElementById('bgc').value=c;
+  document.querySelectorAll('#panel .sw').forEach(s=>s.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const ov=document.getElementById('overlay');
+  if(ov)ov.style.background=c;
+}
+function switchTab(name) {
+  ['list','style','anim','layout'].forEach(n=>{document.getElementById('tab-'+n).style.display=n===name?'block':'none';});
+  document.querySelectorAll('.t').forEach((el,i)=>el.classList.toggle('on',['list','style','anim','layout'][i]===name));
+}
+function tg(ph) { ph.classList.toggle('coll'); const n=ph.nextElementSibling; if(n&&n.classList.contains('psec'))n.classList.toggle('hidden'); }
+
+// ════════════════════════════════
+// PANEL / PW
+// ════════════════════════════════
+function togglePanel() {
+  if (panelVis) { hidePanel(); return; }
+  document.getElementById('pw-popup').style.display='flex';
+  document.getElementById('pw-input').value='';
+  document.getElementById('pw-err').style.display='none';
+  setTimeout(()=>document.getElementById('pw-input').focus(),50);
+}
+function submitPW() {
+  if (document.getElementById('pw-input').value === PASS) {
+    document.getElementById('pw-popup').style.display='none';
+    document.getElementById('panel').style.display='flex';
+    panelVis=true;
+    document.getElementById('ptbtn').textContent='⚙️ 패널 닫기';
+  } else {
+    document.getElementById('pw-err').style.display='block';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+function cancelPW() { document.getElementById('pw-popup').style.display='none'; }
+function hidePanel() {
+  if (document.getElementById('autosave').checked) saveNow();
+  document.getElementById('panel').style.display='none';
+  panelVis=false;
+  document.getElementById('ptbtn').textContent='⚙️ 패널 열기';
+  closeAllPopups();
+}
+function saveAndHide() { saveNow(); hidePanel(); }
+function toggleFS() { if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen(); }
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('pw-popup').style.display==='flex') {
+    if (e.key==='Enter') submitPW();
+    if (e.key==='Escape') cancelPW();
+  }
+});
+
+// 크로마키 배경 초기화
+document.getElementById('overlay').style.background = '#00ff00';
+</script>
+</body>
+</html>
